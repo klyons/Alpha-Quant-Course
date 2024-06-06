@@ -1,7 +1,8 @@
 import MetaTrader5 as mt5
 import pandas as pd
 import numpy as np
-
+import sys
+sys.path.insert(0, '..')
 import time
 from Quantreo.MetaTrader5 import *
 from datetime import datetime, timedelta

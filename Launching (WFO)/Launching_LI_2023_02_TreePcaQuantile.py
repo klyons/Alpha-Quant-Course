@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, '..')
 from Strategies.LI_2023_02_TreePcaQuantile import *
 from Quantreo.Backtest import *
 from Quantreo.WalkForwardOptimization import *
@@ -9,7 +11,7 @@ warnings.filterwarnings("ignore")
 save = False
 name = "LI_2023_02_TreePcaQuantile_AUDUSD"
 
-df = pd.read_csv("../Data/FixTimeBars/AUDUSD_4H_Admiral_READY.csv", index_col="time", parse_dates=True)
+df = pd.read_csv("../Data/FixTimeBars/EURUSD_4H_Admiral_READY.csv", index_col="time", parse_dates=True)
 
 
 params_range = {

@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, '..')
 from Strategies.LI_2023_02_LinSvcQuantile import *
 from Quantreo.Backtest import *
 from Quantreo.WalkForwardOptimization import *

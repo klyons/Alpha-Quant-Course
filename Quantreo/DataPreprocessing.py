@@ -1,6 +1,7 @@
 import ta
 import pandas as pd
 import numpy as np
+from arch import arch_model
 
 
 def sma(df, col, n):
@@ -22,6 +23,15 @@ def rsi(df, col, n):
     df[f"RSI"] = ta.momentum.RSIIndicator(df[col],int(n)).rsi()
     return df
 
+def garch_prediction(df, col):
+    df = df.copy()
+    # Fit a GARCH(1, 1) model to the 'col' time series
+    model = arch_model(df[col], vol='Garch', p=1, q=1)
+    model_fit = model.fit(disp='off')
+    # Make a one-step ahead prediction
+    prediction = model_fit.forecast(start=0)
+    df['GARCH'] = prediction.variance
+    return df
 
 def atr(df, n):
     df = df.copy()

@@ -51,12 +51,19 @@ def get_rates(symbol, number_of_data=10000, timeframe=mt5.TIMEFRAME_D1):
 
     # Extract n rates before now
     rates = mt5.copy_rates_from(symbol, timeframe, from_date, number_of_data)
-
+    print(rates)
     # Transform Tuple into a DataFrame
     df_rates = pd.DataFrame(rates)
 
     # Convert number format of the date into date format
-    df_rates["time"] = pd.to_datetime(df_rates["time"], unit="s")
+    try:
+        # Your existing code that may raise an exception
+        df_rates["time"] = pd.to_datetime(df_rates["time"], unit="s")
+    except KeyError as e:
+        # Handle the KeyError (column not found)
+        print(f"Error: {e}. The 'time' column is missing in df_rates.")
+        print("Available columns:", df_rates.columns)
+        input("Press Enter to continue...")
 
     # Put the "time" column as index
     df_rates = df_rates.set_index("time")

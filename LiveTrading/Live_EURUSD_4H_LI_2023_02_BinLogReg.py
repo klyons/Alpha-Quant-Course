@@ -2,6 +2,10 @@ import MetaTrader5 as mt5
 import pandas as pd
 import numpy as np
 
+
+import sys
+sys.path.insert(0, '..')
+
 import time
 from Quantreo.MetaTrader5 import *
 from datetime import datetime, timedelta
@@ -9,7 +13,7 @@ from Quantreo.LiveTradingSignal import *
 import warnings
 warnings.filterwarnings("ignore")
 
-symbol = "AUDUSD-Z"
+symbol = "EURUSD"
 lot = 0.01
 magic = 16
 timeframe = timeframes_mapping["4-hours"]

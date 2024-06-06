@@ -23,8 +23,25 @@ def get_rates(symbol, number_of_data=10_000, timeframe=mt5.TIMEFRAME_D1):
 
     return df_rates
 
+def get_ticks(symbol, number_of_data=10_000, timeframe=mt5.TIMEFRAME_D1):
+    # Compute now date
+    from_date = datetime.now()
+
+    # Extract n rates before now
+    ticks = mt5.copy_ticks_from(symbol, timeframe, from_date, number_of_data) #tick data not high low close bars
+
+    # Transform array into a DataFrame
+    df_ticks = pd.DataFrame(ticks)
+
+    # Convert number format of the date into date format
+    df_ticks["time"] = pd.to_datetime(df_ticks["time"], unit="s")
+
+    df_ticks = df_ticks.set_index("time")
+
+    return df_ticks
+
 # !! You can't import more than 99.999 rows in one request
-df = get_rates("AUDUSD-Z", number_of_data=30_000, timeframe=mt5.TIMEFRAME_H4)
+df = get_rates("ES", number_of_data=30_000, timeframe=mt5.TIMEFRAME_H4) #AUDUSD-Z
 
 # Display the data
 print(df)
