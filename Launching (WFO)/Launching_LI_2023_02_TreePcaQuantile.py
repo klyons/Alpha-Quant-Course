@@ -9,9 +9,9 @@ warnings.filterwarnings("ignore")
 
 # SAVE WEIGHTS
 save = False
-name = "LI_2023_02_TreePcaQuantile_AUDUSD"
+name = "LI_2023_02_TreePcaQuantile_EURUSD"
 
-df = pd.read_csv("../Data/FixTimeBars/EURUSD_4H_Admiral_READY.csv", index_col="time", parse_dates=True)
+df = pd.read_csv("../Data/FixTimeBars/EURUSD_4h_Admiral_READY.csv", index_col="time", parse_dates=True)
 
 
 params_range = {

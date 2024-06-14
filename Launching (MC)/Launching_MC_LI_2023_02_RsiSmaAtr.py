@@ -1,3 +1,8 @@
+# importing the sys module
+import sys         
+# appending the directory of mod.py 
+# in the sys.path list
+sys.path.append('C:/ws/ALPHA-QUANT-COURSE/') 
 from Quantreo.MonteCarlo import *
 from Strategies.LI_2023_02_RsiSmaAtr import *
 import warnings

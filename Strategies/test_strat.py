@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import ta
 from DataPreprocessing_test import *
-#from DataPreprocessing_test import *
+
 
 
 class TestStrat:

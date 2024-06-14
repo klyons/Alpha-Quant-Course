@@ -13,7 +13,7 @@ save = True
 name = "LI_2023_02_LinSvcQuantile_AUDUSD"
 
 # Import the data
-df = pd.read_csv("../Data/FixTimeBars/AUDUSD_4H_Admiral_READY.csv", index_col="time", parse_dates=True)
+df = pd.read_csv("../Data/FixTimeBars/EURUSD_4H_Admiral_READY.csv", index_col="time", parse_dates=True)
 
 params_range = {
     "sma_slow": [80.],

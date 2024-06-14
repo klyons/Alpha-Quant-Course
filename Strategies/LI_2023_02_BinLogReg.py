@@ -35,6 +35,7 @@ class BinLogReg:
 
         # Get test parameters
         self.output_dictionary = parameters.copy()
+        #change to True for 
         self.output_dictionary["train_mode"] = False
 
         if self.train_mode:

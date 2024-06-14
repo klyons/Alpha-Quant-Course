@@ -1,7 +1,8 @@
 from datetime import datetime
 import pandas as pd
 import MetaTrader5 as mt5
-
+import sys
+sys.path.insert(0, '..')
 # Initialize the bounds between MetaTrader 5 and Python
 mt5.initialize()
 
@@ -41,12 +42,16 @@ def get_ticks(symbol, number_of_data=10_000, timeframe=mt5.TIMEFRAME_D1):
     return df_ticks
 
 # !! You can't import more than 99.999 rows in one request
-df = get_rates("ES", number_of_data=30_000, timeframe=mt5.TIMEFRAME_H4) #AUDUSD-Z
+df = get_rates("USDCHF", number_of_data=99_999, timeframe=mt5.TIMEFRAME_M10) #AUDUSD-Z
+#df = get_rates("USDJPY", number_of_data=99_999, timeframe=mt5.TIMEFRAME_H1)
+#df = get_rates("USDJPY", number_of_data=99_999, timeframe=mt5.TIMEFRAME_H4)
 
 # Display the data
 print(df)
 
 # Put where you want to save the database
+#sample
+#C:\ws\Alpha-Quant-Course\Data\FixTimeBars\USDCHF_M10_Admiral.csv
 save_path = input("Write the path to store the file if you want to (if not, just press enter):")
 
 # Save the database if you had put a path

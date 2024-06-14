@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, '..')
 from Strategies.LI_2023_02_RsiSmaAtr import *
 from Quantreo.WalkForwardOptimization import *
 import warnings
