@@ -13,7 +13,9 @@ warnings.filterwarnings("ignore")
 save = False
 name = "LI_2023_02_BinLogReg_AUDUSD"
 
-df = pd.read_csv("../Data/FixTimeBars/EURUSD_4H_Admiral_READY.csv", index_col="time", parse_dates=True)
+
+#add aditinoal data here
+df = pd.read_csv("../Data/FixTimeBars/EURUSD_30H_Admiral.csv", index_col="time", parse_dates=True)
 
 
 params_range = {
