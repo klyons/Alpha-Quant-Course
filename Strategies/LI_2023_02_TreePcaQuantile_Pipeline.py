@@ -1,9 +1,12 @@
 """
-Description:  Trading strategy based on a Machine Learning algorithm (Logistic Regression). As input, we have
-              SMA diff, RSI and ATR to have more information.
+Description:  Trading strategy based on a Machine Learning algorithm (Decision Tree). As input, we take a LOT of
+              different features that we will reduce using a PCA
 
-              We standardize the data to put all the data at the same scale (necessary for many algorithms and
-              allow algorithms to have a better convergence)
+              We standardize the data to put all the data at the same scale (necessary for PCA, not especially for the
+              Decision Tree)
+
+              We apply an PCA to reduce the number of variable and remove the multicolinearity
+
 
 Entry signal: We need that the ML algo say to buy in the same time
 
@@ -11,19 +14,17 @@ Exit signal:  Basic Take-profit and Stop-loss
 
 Good to know: Only one trade at time (we can't have a buy and a sell position in the same time)
 
-How to improve this algorithm?: Try a non-linear model to see the difference of performances
+How to improve this algorithm?: Put variable Take-profit and Stop loss
 """
 
 from Quantreo.DataPreprocessing import *
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import GridSearchCV, train_test_split
-from sklearn.metrics import classification_report
-from sklearn.pipeline import Pipeline
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 from joblib import dump, load
 
 
-class BinLogReg_Pipeline():
+class TreePcaQuantile_Pipeline():
 
     def __init__(self, data, parameters):
         # Set parameters
@@ -35,11 +36,11 @@ class BinLogReg_Pipeline():
         self.rsi_period, self.atr_period = parameters["rsi"], parameters["atr"]
         self.look_ahead_period = parameters["look_ahead_period"]
 
-        self.model, self.saved_model_path = None, None
+        self.model, self.sc, self.pca = None, None, None
+        self.saved_model_path, self.saved_sc_path = None, None
 
         # Get test parameters
         self.output_dictionary = parameters.copy()
-        #change to True for 
         self.output_dictionary["train_mode"] = False
 
         if self.train_mode:
@@ -48,6 +49,8 @@ class BinLogReg_Pipeline():
             self.train_model()
         else:
             self.model = parameters["model"]
+            self.sc = parameters["sc"]
+            self.pca = parameters["pca"]
             self.data = data
 
         self.start_date_backtest = self.data.index[0]
@@ -63,9 +66,13 @@ class BinLogReg_Pipeline():
         self.var_buy_low, self.var_sell_low = None, None
 
     def get_features(self, data_sample):
+
         data_sample = sma_diff(data_sample, "close", self.sma_fast, self.sma_slow)
         data_sample = rsi(data_sample, "close", self.rsi_period)
-
+        data_sample = previous_ret(data_sample, "close", 60)
+        data_sample = sto_rsi(data_sample, "close", 14)
+        data_sample = ichimoku(data_sample, 27, 78)
+        data_sample = candle_information(data_sample)
         data_sample = atr(data_sample,self.atr_period)
         data_sample = data_sample.fillna(value=0)
 
@@ -79,37 +86,58 @@ class BinLogReg_Pipeline():
         self.data_train = self.get_features(self.data_train)
 
         # Create lists with the columns name of the features used and the target
-        self.data_train = binary_signal(self.data_train, self.look_ahead_period)
+        self.data_train = quantile_signal(self.data_train, self.look_ahead_period, pct_split=full_split)
+        # !! As it is very time-consuming to compute & it is not variable, we compute it outside the function
         list_y = ["Signal"]
 
         # Split our dataset in a train and a test set
         split = int(len(self.data_train) * full_split)
         X_train, X_test, y_train, y_test = data_split(self.data_train, split, self.list_X, list_y)
 
+        # Initialize the standardization model
+        sc = StandardScaler()
+        X_train_sc = sc.fit_transform(X_train)
+
+        # Create a PCA to remove multicolinearity and reduce the number of variable keeping many information
+        pca = PCA(n_components=3)
+        X_train_pca = pca.fit_transform(X_train_sc)
+
         # Create the model
         pipe = Pipeline([
-            ('scaler', StandardScaler()),
-            ('logistic', LogisticRegression(solver='saga', tol=1e-2, max_iter=200, random_state=42))
+            ('sc', StandardScaler()),
+            ('pca', PCA(n_components=3)),
+            ('clf', DecisionTreeClassifier())
         ])
 
+        # Define the hyperparameters to search over
         grid = {
-            'logistic__C': [1e-5, 1e-3, 1e-1, 1e0, 1e1, 1e2],
-            'logistic__penalty': ['l1', 'l2']
+            'pca__n_components': [3, 4],
+            'clf__min_samples_split': [5, 10],
+            'clf__max_depth': [5, 6, 7]
         }
-        ml_model = GridSearchCV(pipe, grid, cv=5, n_jobs=-1)
+
+        
+        ml_model = GridSearchCV(pipe, grid, cv=5)
         ml_model.fit(X_train, y_train)
 
+        
         # Save models as attributes
         self.model = ml_model.best_estimator_
+        self.sc = sc
+        self.pca = ml_model.best_estimator_.named_steps['pca']
 
-        # Save the model for the eventual test sets
         self.output_dictionary["model"] = ml_model
+        self.output_dictionary["sc"] = sc
+        self.output_dictionary["pca"] = pca
 
     def get_predictions(self):
         self.data = self.get_features(self.data)
 
         X = self.data[self.list_X]
-
+        X_sc = self.sc.transform(X)
+        X_pca = self.pca.transform(X_sc)
+        #original code
+        #predict_array = self.model.predict(X_pca)
         predict_array = self.model.predict(X)
         self.data["ml_signal"] = 0
         self.data["ml_signal"] = predict_array
