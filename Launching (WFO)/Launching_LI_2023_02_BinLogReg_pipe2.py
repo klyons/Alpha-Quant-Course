@@ -21,6 +21,7 @@ df = pd.read_csv("../Data/FixTimeBars/EURUSD_30H_Admiral.csv", index_col="time",
 params_range = {
     "tp": [0.005 + i*0.001 for i in range(5)],
     "sl": [-0.005 - i*0.001 for i in range(5)],
+    "atr":[3,4,5]
 }
 
 params_fixed = {
@@ -28,7 +29,7 @@ params_fixed = {
     "sma_fast": 30,
     "sma_slow":80,
     "rsi":14,
-    "atr":5,
+    #"atr":5,
     "cost": 0.0001,
     "leverage": 5,
     "list_X": ["SMA_diff", "RSI", "ATR"],
