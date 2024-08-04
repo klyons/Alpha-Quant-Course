@@ -27,8 +27,8 @@ params_fixed = {
     "atr": 15,
     "cost": 0.0001,
     "leverage": 5,
-    "list_X": ["SMA_diff", "RSI", "ATR", "candle_way", "filling", "amplitude", "SPAN_A", "SPAN_B", "BASE", "STO_RSI",
-               "STO_RSI_D", "STO_RSI_K", "previous_ret"],
+    "list_X": ["SMA_diff", "RSI", "ATR", "candle_way", "filling", "amplitude", "SPAN_A", "SPAN_B", "BASE", 
+               "STO_RSI", "STO_RSI_D", "STO_RSI_K", "previous_ret"],
     "train_mode": True,
 }
 

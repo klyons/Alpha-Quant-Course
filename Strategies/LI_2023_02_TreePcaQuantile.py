@@ -16,12 +16,14 @@ Good to know: Only one trade at time (we can't have a buy and a sell position in
 
 How to improve this algorithm?: Put variable Take-profit and Stop loss
 """
-
-from Quantreo.DataPreprocessing import *
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from joblib import dump, load
+#for importing the quantreo library
+import sys
+sys.path.insert(0, '..')
+from Quantreo.DataPreprocessing import *
 
 
 class TreePcaQuantile:

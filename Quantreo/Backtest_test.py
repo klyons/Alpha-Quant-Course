@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import sys
 
-
 sys.path.insert(0, '..')
 from Strategies.LI_2023_02_RsiSma import *
 

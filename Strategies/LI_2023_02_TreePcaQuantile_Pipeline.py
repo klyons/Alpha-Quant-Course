@@ -17,16 +17,19 @@ Good to know: Only one trade at time (we can't have a buy and a sell position in
 How to improve this algorithm?: Put variable Take-profit and Stop loss
 """
 
-from Quantreo.DataPreprocessing import *
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from joblib import dump, load
-
+import pdb
+#for importing the quantreo library
+import sys
+sys.path.insert(0, '..')
+from Quantreo.DataPreprocessing import *
 
 class TreePcaQuantile_Pipeline():
 
-    def __init__(self, data, parameters):
+    def __init__(self, data, parameters, data2 = None):
         # Set parameters
         self.list_X = parameters["list_X"]
         self.tp, self.sl = parameters["tp"], parameters["sl"]
@@ -88,6 +91,7 @@ class TreePcaQuantile_Pipeline():
         # Create lists with the columns name of the features used and the target
         self.data_train = quantile_signal(self.data_train, self.look_ahead_period, pct_split=full_split)
         # !! As it is very time-consuming to compute & it is not variable, we compute it outside the function
+        pdb.set_trace()
         list_y = ["Signal"]
 
         # Split our dataset in a train and a test set
@@ -99,19 +103,19 @@ class TreePcaQuantile_Pipeline():
         X_train_sc = sc.fit_transform(X_train)
 
         # Create a PCA to remove multicolinearity and reduce the number of variable keeping many information
-        pca = PCA(n_components=3)
-        X_train_pca = pca.fit_transform(X_train_sc)
+        #pca = PCA(n_components=3)
+        #X_train_pca = pca.fit_transform(X_train_sc)
 
         # Create the model
         pipe = Pipeline([
             ('sc', StandardScaler()),
-            ('pca', PCA(n_components=3)),
+            ('pca', PCA(n_components=5)),
             ('clf', DecisionTreeClassifier())
         ])
 
         # Define the hyperparameters to search over
         grid = {
-            'pca__n_components': [3, 4],
+            'pca__n_components': [5, 7, 9], #len(df.columns // 1.2)
             'clf__min_samples_split': [5, 10],
             'clf__max_depth': [5, 6, 7]
         }
@@ -134,8 +138,8 @@ class TreePcaQuantile_Pipeline():
         self.data = self.get_features(self.data)
 
         X = self.data[self.list_X]
-        X_sc = self.sc.transform(X)
-        X_pca = self.pca.transform(X_sc)
+        #X_sc = self.sc.transform(X)
+        #X_pca = self.pca.transform(X_sc)
         #original code
         #predict_array = self.model.predict(X_pca)
         predict_array = self.model.predict(X)

@@ -6,7 +6,9 @@ Strategy Explanation:
 
 - We use the ATR to compute our Take-profit & Stop-loss dynamically
 """
-
+#for importing the quantreo library
+import sys
+sys.path.insert(0, '..')
 from Quantreo.DataPreprocessing import *
 
 

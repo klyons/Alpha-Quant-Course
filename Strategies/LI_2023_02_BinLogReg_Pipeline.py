@@ -14,7 +14,6 @@ Good to know: Only one trade at time (we can't have a buy and a sell position in
 How to improve this algorithm?: Try a non-linear model to see the difference of performances
 """
 
-from Quantreo.DataPreprocessing import *
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.metrics import classification_report
@@ -22,6 +21,10 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from joblib import dump, load
 
+#for importing the quantreo library
+import sys
+sys.path.insert(0, '..')
+from Quantreo.DataPreprocessing import *
 
 class BinLogReg_Pipeline():
 
@@ -99,6 +102,7 @@ class BinLogReg_Pipeline():
         ml_model = GridSearchCV(pipe, grid, cv=5, n_jobs=-1)
         ml_model.fit(X_train, y_train)
 
+        # print model logistics and 
         # Save models as attributes
         self.model = ml_model.best_estimator_
 

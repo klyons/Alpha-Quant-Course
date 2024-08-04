@@ -15,7 +15,7 @@ name = "LI_2023_02_BinLogReg_AUDUSD"
 
 
 #add aditinoal data here
-df = pd.read_csv("../Data/FixTimeBars/EURUSD_30H_Admiral.csv", index_col="time", parse_dates=True)
+df = pd.read_csv("../Data/FixTimeBars/EURUSD_30M_Admiral.csv", index_col="time", parse_dates=True)
 
 
 params_range = {

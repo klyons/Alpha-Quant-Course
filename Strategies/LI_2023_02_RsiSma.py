@@ -5,10 +5,13 @@ Strategy Explanation:
 - When there is downward trend (SMAs) and a upward force (RSI), we take a buy position and inversely
 """
 
-from Quantreo.DataPreprocessing import *
 import pandas as pd
 import numpy as np
 
+#for importing the quantreo library
+import sys
+sys.path.insert(0, '..')
+from Quantreo.DataPreprocessing import *
 class RsiSma:
 
     def __init__(self, data, parameters):

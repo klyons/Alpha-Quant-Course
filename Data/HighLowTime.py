@@ -46,13 +46,17 @@ def find_timestamp_extremum(df, df_lower_timeframe):
 
     return df
 
+import sys
+import os
+sys.path.insert(0, '..')
+print("Current working directory:", os.getcwd())
 
-df_low_tf = pd.read_csv("FixTimeBars/AUDUSD_30M_Admiral.csv", index_col="time", parse_dates=True)
-df_high_tf = pd.read_csv("FixTimeBars/AUDUSD_4H_Admiral.csv", index_col="time", parse_dates=True)
+df_low_tf = pd.read_csv(r"FixTimeBars/EURUSD_1M.csv", index_col="time", parse_dates=True)
+df_high_tf = pd.read_csv(r"FixTimeBars/EURUSD_5M.csv", index_col="time", parse_dates=True)
 
 df = find_timestamp_extremum(df_high_tf, df_low_tf)
 
 print(df[["high_time", "low_time"]])
-df.to_csv("FixTimeBars/AUDUSD_4H_Admiral_READY.csv")
+df.to_csv("FixTimeBars/EURUSD_1H_R.csv")
 
 

@@ -3,6 +3,9 @@ Strategy Explanation:
 - We create a trend following strategy using the Ichimoku indicator
 """
 
+#for importing the quantreo library
+import sys
+sys.path.insert(0, '..')
 from Quantreo.DataPreprocessing import *
 
 

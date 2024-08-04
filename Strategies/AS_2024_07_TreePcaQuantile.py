@@ -17,13 +17,18 @@ Good to know: Only one trade at time (we can't have a buy and a sell position in
 How to improve this algorithm?: Put variable Take-profit and Stop loss
 """
 
-from Quantreo.DataPreprocessing import *
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from joblib import dump, load
+from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
 
+
+#for importing the quantreo library
+import sys
+sys.path.insert(0, '..')
+from Quantreo.DataPreprocessing import *
 
 class TreePcaQuantilePipe:
 
@@ -85,7 +90,7 @@ class TreePcaQuantilePipe:
 
         # features to reply in the get_features function
         self.data_train = self.get_features(self.data_train)
-
+        
         # Create lists with the columns name of the features used and the target
         self.data_train = quantile_signal(self.data_train, self.look_ahead_period, pct_split=full_split)
         # !! As it is very time-consuming to compute & it is not variable, we compute it outside the function
@@ -111,10 +116,10 @@ class TreePcaQuantilePipe:
         ])
         
         params = {
-            "pca__n_components": [5, 7],  # Number of components to keep
-            'DTClassifier__max_depth': [3, 5, 7],
-            'DTClassifier__min_samples_split': [2, 5, 10],
-            'DTClassifier__min_samples_leaf': [1, 2, 4]            
+            "pca__n_components": [5],  # Number of components to keep
+            'DTClassifier__max_depth': [5, 7],
+            'DTClassifier__min_samples_split': [5, 10],
+            'DTClassifier__min_samples_leaf': [3, 4]            
         }
 
         grid_search = GridSearchCV(estimator=pipe, param_grid=params, cv=5, scoring='accuracy')
@@ -135,10 +140,10 @@ class TreePcaQuantilePipe:
         self.data = self.get_features(self.data)
 
         X = self.data[self.list_X]
-        X_sc = self.sc.transform(X)
-        X_pca = self.pca.transform(X_sc)
+        #X_sc = self.sc.transform(X)
+        #X_pca = self.pca.transform(X_sc)
 
-        predict_array = self.model.predict(X_pca)
+        predict_array = self.model.predict(X)
         self.data["ml_signal"] = 0
         self.data["ml_signal"] = predict_array
 

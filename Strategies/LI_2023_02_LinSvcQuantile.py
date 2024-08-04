@@ -13,11 +13,13 @@ Good to know: Only one trade at time (we can't have a buy and a sell position in
 
 How to improve this algorithm?: Try a non-linear model to see the difference of performances
 """
-
-from Quantreo.DataPreprocessing import *
 from sklearn.svm import LinearSVC
 from sklearn.preprocessing import StandardScaler
 
+#for importing the quantreo library
+import sys
+sys.path.insert(0, '..')
+from Quantreo.DataPreprocessing import *
 
 
 class LinSvcQuantile:
