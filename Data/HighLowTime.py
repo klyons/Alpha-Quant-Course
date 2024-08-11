@@ -1,6 +1,12 @@
 import numpy as np
 from tqdm import tqdm
 import pandas as pd
+import pdb
+import create_databases
+import sys
+import os, re
+import glob
+import MetaTrader5 as mt5
 
 def find_timestamp_extremum(df, df_lower_timeframe):
     """
@@ -46,17 +52,130 @@ def find_timestamp_extremum(df, df_lower_timeframe):
 
     return df
 
-import sys
-import os
-sys.path.insert(0, '..')
-print("Current working directory:", os.getcwd())
+#potential instruments are "equities" "currencies" and 
+def high_low_equities(timespan):
+    sub_timeframe_map = {
+        "1D": "4H",
+        "4H": "1H",
+        "1H": "30M",
+        "30M": "10M",
+        "10M": "1M",
+        "1M": "10S",
+        "30S": "10S",
+    }
+    
+    timespan_map_reversed = {
+        "D": "day",
+        "H": "hour",
+        "M": "minute",
+        "S": "second"
+    }
+    
+    # Ensure the current working directory is correct
+    cwd = os.getcwd()
+    print("Current working directory:", cwd)
+    
+    # Construct the folder path
+    folder_path = os.path.join(cwd, "Equities", timespan)
+    print(f"Folder path: {folder_path}")
+    
+    # Get a list of all files in the folder
+    files = glob.glob(os.path.join(folder_path, '*'))
+    
+    # Iterate over all files in the given timeframe
+    for file in files:
+        data = os.path.basename(file)
+        file_instrument = data.split('_')[0]
+        timeframe = data.split('_')[1].split('.')[0]
+        sub_time = sub_timeframe_map.get(timeframe, "")
+        
+        if sub_time:
+            sub_folder_path = os.path.join(cwd, instrument, sub_time)
+            sub_files = glob.glob(os.path.join(sub_folder_path, f"{file_instrument}_{sub_time}.parquet"))
+            
+            if not sub_files:
+                # If the data in the smaller timeframe doesn't exist, download it
+                numeric_values = re.findall(r'\d+', sub_time)
+                numeric_string = ''.join(numeric_values)
+                create_databases.get_equity(file_instrument, multiplier=int(numeric_string), timespan=timespan_map_reversed[sub_time[-1]])
+                # Re-check for the sub_file after downloading
+                sub_files = glob.glob(os.path.join(sub_folder_path, f"{file_instrument}_{sub_time}.parquet"))
+            
+            if sub_files:
+                # If the data in the smaller timeframe exists, run the function that takes both files
+                sub_file = sub_files[0]
+                high_tf = pd.read_parquet(file)
+                sub_tf = pd.read_parquet(sub_file)
+                find_timestamp_extremum(high_tf, sub_tf)
+    
+    
+def high_low_currencies(timespan):
+    sub_timeframe_map = {
+        "1D": mt5.TIMEFRAME_H4,
+        "4H": mt5.TIMEFRAME_H1,
+        "1H": mt5.TIMEFRAME_M30,
+        "30M": mt5.TIMEFRAME_M10,
+        "10M": mt5.TIMEFRAME_M1,
+        "5M": mt5.TIMEFRAME_M1,
+    }
+    sub_timeframe_strings = {
+        "1D": "4H",
+        "4H": "1H",
+        "1H": "30M",
+        "30M": "10M",
+        "10M": "1M",
+        "5M": "1M",
+    }
+    
+    # Ensure the current working directory is correct
+    cwd = os.getcwd()
+    print("Current working directory:", cwd)
+    
+    # Construct the folder path
+    folder_path = os.path.join(cwd, "Currencies", timespan)
+    print(f"Folder path: {folder_path}")
+    
+    # Get a list of all files in the folder
+    files = glob.glob(os.path.join(folder_path, '*'))
+    
+    # Iterate over all files in the given timeframe
+    for file in files:
+        data = os.path.basename(file)
+        file_instrument = data.split('_')[0]
+        timeframe = data.split('_')[1].split('.')[0]
+        sub_time = sub_timeframe_strings.get(timeframe, "")        
+        if sub_time:
+            sub_folder_path = os.path.join(cwd, f"Currencies/{sub_time}")
+            sub_files = glob.glob(os.path.join(sub_folder_path, f"{file_instrument}_{sub_time}.parquet"))
+            pdb.set_trace()
+            if not sub_files:
+                # If the data in the smaller timeframe doesn't exist, download it
+                #numeric_values = re.findall(r'\d+', sub_time)
+                #numeric_string = ''.join(numeric_values)
+                mt5.initialize()
+                create_databases.get_currency(f"{file_instrument}!", timeframe=sub_timeframe_map[timespan])
+                # Re-check for the sub_file after downloading
+                sub_files = glob.glob(os.path.join(sub_folder_path, f"{file_instrument}_{sub_time}.parquet"))
+            
+            if sub_files:
+                # If the data in the smaller timeframe exists, run the function that takes both files
+                sub_file = sub_files[0]
+                high_tf = pd.read_parquet(file)
+                sub_tf = pd.read_parquet(sub_file)
+                find_timestamp_extremum(high_tf, sub_tf)        
+ # download_data(file_instrument, sub_time)
 
-df_low_tf = pd.read_csv(r"FixTimeBars/EURUSD_1M.csv", index_col="time", parse_dates=True)
-df_high_tf = pd.read_csv(r"FixTimeBars/EURUSD_5M.csv", index_col="time", parse_dates=True)
-
-df = find_timestamp_extremum(df_high_tf, df_low_tf)
-
-print(df[["high_time", "low_time"]])
-df.to_csv("FixTimeBars/EURUSD_1H_R.csv")
 
 
+#df_low_tf = pd.read_csv(r"FixTimeBars/EURUSD_1M.csv", index_col="time", parse_dates=True)
+#df_high_tf = pd.read_csv(r"FixTimeBars/EURUSD_5M.csv", index_col="time", parse_dates=True)
+
+#df = find_timestamp_extremum(df_high_tf, df_low_tf)
+
+#print(df[["high_time", "low_time"]])
+#df.to_csv("FixTimeBars/EURUSD_1H_R.csv")
+
+
+#high_low_equities("equities","1hour")
+if __name__ == '__main__':
+    high_low_currencies("5M")

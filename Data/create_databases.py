@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, date
 import pandas as pd
 import MetaTrader5 as mt5
 import requests
@@ -7,36 +7,40 @@ import os
 import sys
 import pdb
 
-
-mt5.initialize()
-print(mt5.account_info())
 load_dotenv()
 polygon_api_key = os.getenv('polygon_api_key')
 
+#https://polygon.io/docs/stocks/getting-started
+polygon_rest_baseurl = "https://api.polygon.io/v2/"  #maybe trie v3as well
+
+def get_equities_save_path(symbol, multiplier, timespan):
+    timespan_map = {
+        "day": "D",
+        "hour": "H",
+        "minute": "M",
+        "second": "S"
+    }
+    t = timespan_map.get(timespan, "")
+    return os.path.join(f"Equities/{multiplier}{t}/{symbol}_{multiplier}{t}.parquet")    
 
 def get_save_path(symbol, timeframe):
     # Replace special characters in symbol with underscore
     symbol = symbol.replace("!", "_")
-    
-    # Convert timeframe to string
-    if timeframe == mt5.TIMEFRAME_M1:
-        timeframe_str = "1M"
-    elif timeframe == mt5.TIMEFRAME_M5:
-        timeframe_str = "5M"
-    elif timeframe == mt5.TIMEFRAME_M10:
-        timeframe_str = "10M"
-    elif timeframe == mt5.TIMEFRAME_M15:
-        timeframe_str = "15M"
-    elif timeframe == mt5.TIMEFRAME_M30:
-        timeframe_str = "M30"
-    if timeframe == mt5.TIMEFRAME_H1:
-        timeframe_str = "1H"
-    elif timeframe == mt5.TIMEFRAME_H4:
-        timeframe_str = "4H"
-    
-    # Add more conditions for other timeframes as needed
-    save_path = f"C:/ws/Alpha-Quant-Course/Data/FixTimeBars/{symbol}{timeframe_str}.csv"
-    
+    # Dictionary to map timeframes to their string representations
+    timeframe_dict = {
+        mt5.TIMEFRAME_M1: "1M",
+        mt5.TIMEFRAME_M5: "5M",
+        mt5.TIMEFRAME_M10: "10M",
+        mt5.TIMEFRAME_M15: "15M",
+        mt5.TIMEFRAME_M30: "M30",
+        mt5.TIMEFRAME_H1: "1H",
+        mt5.TIMEFRAME_H4: "4H"
+        # Add more mappings as needed
+    }
+    # Get the string representation of the timeframe
+    timeframe_str = timeframe_dict.get(timeframe, "Unknown")
+    # Construct the save path
+    save_path = f"C:/ws/Alpha-Quant-Course/Data/Currencies/{timeframe_str}/{symbol}{timeframe_str}.parquet"
     return save_path
 
 def get_rates(symbol, number_of_data=10_000, timeframe=mt5.TIMEFRAME_D1):
@@ -70,20 +74,8 @@ def get_ticks(symbol, number_of_data=10_000, timeframe=mt5.TIMEFRAME_D1):
 
     df_ticks = df_ticks.set_index("time")
 
-    return df_ticks
-import requests
-import pandas as pd
-import pdb
-import time
-from datetime import date, datetime, timedelta
-
-#https://polygon.io/docs/stocks/getting-started
-
-polygon_api_key = "JlgRBshWYNKUeDMpSLOjvk7slj1GCpBh"  #JlgRBshWYNKUeDMpSLOjvk7slj1GCpBh
-polygon_rest_baseurl = "https://api.polygon.io/v2/"  #maybe trie v3as well
-
 limit = 100000
-
+#this is a polygon API function.  you need a polygon API key to access this
 def get_tickers():
     request_url = "https://api.polygon.io/v3/reference/tickers?active=true&limit=1000&apiKey={0}".format(polygon_api_key)
     data = requests.get(request_url).json()
@@ -105,7 +97,7 @@ def get_tickers():
     else:
         print("No tickers downloaded")
 
-def pull_data(symbol, start_time, multiplier, timespan):
+def pull_data(symbol, multiplier, timespan, start_time):
     """
     date is a python date format
     symbol is of the form XXXUSD
@@ -117,7 +109,7 @@ def pull_data(symbol, start_time, multiplier, timespan):
     if not start_time:
         start_time = datetime.today() - timedelta(days=365*5) # polygon has a 5 year limitation
         start_time =  datetime.date(start_time)
-    end_time = today = date.today()
+    end_time = date.today()
 
     ## this means the symbol is an index and requires a differant API call
 
@@ -145,51 +137,8 @@ def pull_data(symbol, start_time, multiplier, timespan):
     else:
         return None
 
-
-def pull_dividend_data(symbol, start_time, multiplier, timespan):
-    """
-    date is a python date format
-    symbol is of the form XXXUSD
-    """
-
-    # newest data at the bottom
-    sort = "asc"
-
-    if not start_time:
-        start_time = datetime.today() - timedelta(days=365*5) # polygon has a 5 year limitation
-        start_time =  datetime.date(start_time)
-    end_time = today = date.today()
-
-    ## this means the symbol is an index and requires a differant API call
-    url = f'https://api.polygon.io/v3/reference/dividends/{symbol}?from={start_date}&to={end_date}&apiKey={polygon_api_key}'
-
-
-    request_url2 = f"{polygon_rest_baseurl}aggs/ticker/{symbol}/range/{multiplier}/" +\
-            f"{timespan}/{start_time}/{end_time}?adjusted=true&sort={sort}&" + \
-            f"limit={limit}&apiKey={polygon_api_key}"
-
-    if symbol[:2] == 'I:' or symbol[:2] == 'i:':  ## add string for index or symbol to allow for adjustment
-        request_url = "{0}aggs/ticker/{1}/range/{2}/{3}/{4}/{5}?adjusted=true&sort={6}&limit={7}&apiKey={8}".format(polygon_rest_baseurl, symbol, multiplier, timespan, start_time, end_time, sort, limit, polygon_api_key)
-
-    else:
-        request_url = "{0}aggs/ticker/{1}/range/{2}/{3}/{4}/{5}?adjusted=true&sort={6}&limit={7}&apiKey={8}".format(polygon_rest_baseurl, symbol, multiplier, timespan, start_time, end_time, sort, limit, polygon_api_key)
-
-
-    # If there is a connection error, the following try and catch should prevent Python from
-    # exiting. Instead, return no data and let the caller try again
-    try:
-        data = requests.get(request_url).json()
-    except:
-        print("Connection Error, try again")
-        return None 
-
-    if "results" in data:
-        return data["results"]
-    else:
-        return None
-
-
-def get_data(start_day, symbol, multiplier=1, timespan='hour', silent=False):
+#polygon api function
+def get_equity(symbol, multiplier=1, timespan='hour', silent=False, start_day = None, end_day = None):
     # start_day must be of datetime.date() format
     # symbol must be uppercase
     bars = []
@@ -197,7 +146,7 @@ def get_data(start_day, symbol, multiplier=1, timespan='hour', silent=False):
     interval = timespan
     symbol = symbol.upper()
     while(1):
-        bars = pull_data(symbol, start_day, multiplier, interval)
+        bars = pull_data(symbol, timespan=timespan, start_time = start_day, multiplier = multiplier)
         if not bars:
             if not silent:
                 print("No data available for %s in this range %s "%(symbol, start_day))
@@ -245,31 +194,24 @@ def get_data(start_day, symbol, multiplier=1, timespan='hour', silent=False):
                 mdf = pd.concat([mdf, df], axis=0)
                 break
     #return mdf
-    save_path = get_save_path(symbol, interval)
-    mdf.to_csv(save_path)
+    save_path = get_equities_save_path(symbol, multiplier, timespan)
+    mdf.to_parquet(save_path)
+    #mdf.to_csv(save_path)
 
 
-def get_currency():
-    currency = "EURUSD!"
-    timeframe = mt5.TIMEFRAME_M5
+def get_currency(currency = None, timeframe = None):
+    if currency == None:
+        currency = "EURUSD!"
+    if timeframe == None:
+        timeframe = mt5.TIMEFRAME_M5
     # !! You can't import more than 99.999 rows in one request
     df = get_rates(currency, number_of_data=99_999, timeframe=timeframe) #AUDUSD-Z
     #df = get_rates("EURUSD!", number_of_data=99_999, timeframe=mt5.TIMEFRAME_H1)
-    #df = get_rates("AUDUSD!", number_of_data=99_999, timeframe=mt5.TIMEFRAME_H1)
-    #df = get_rates("USDJPY", number_of_data=99_999, timeframe=mt5.TIMEFRAME_H4)
-
-    #put this as your input FixTimeBars/USDJPY_1H.csv
-
-    # Display the data
     print(df)
-
-    # Put where you want to save the database
-    #sample
     #C:\ws\Alpha-Quant-Course\Data\FixTimeBars\USDCHF_M30_Forex.csv
     save_path = get_save_path(currency, timeframe)
-    df.to_csv(save_path)
-
-    # Save the database if you had put a path
+    #df.to_csv(save_path) #to_parquet(save_path, engine = pyarrow)
+    df.to_parquet(save_path)
     '''
     save_path = input("Write the path to store the file if you want to (if not, just press enter):")
 
@@ -277,12 +219,21 @@ def get_currency():
         df.to_csv(save_path)
 
     '''
-
-
 ###### Exercise
 #- Do the same thing, for one of the 3 other function (copy_rates_range, copy_ticks_from or copy_ticks_range)
-
-
 if __name__ == '__main__':
-    #get_currency()
-    get_tickers()
+    #use the get currency call in order to download currency data
+    mt5.initialize()
+    print(mt5.account_info())
+    currencies = ["EURUSD!", "GBPUSD!", "AUDUSD!", "USDJPY!", "USDCHF!", "USDCAD", "EURJPY!"]
+    print(currencies)
+    for currency in currencies:
+        #pdb.set_trace()
+        get_currency(currency, timeframe = mt5.TIMEFRAME_M5)#  (symbol, timeframe = mt5.TIMEFRAME_M5)
+    # Get the current date and time
+    now = datetime.now().date()
+    # Calculate the date and time five years ago
+    five_years_ago = now - timedelta(days=5*364)
+    # Print the date and time five years ago
+    print("The date and time five years ago was:", five_years_ago)
+    #get_equity("IBM", start_day=five_years_ago) #(symbol, multiplier=1, timespan='hour', silent=False, start_day = None, end_day = None):
