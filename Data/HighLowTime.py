@@ -126,18 +126,14 @@ def high_low_currencies(timespan):
         "10M": "1M",
         "5M": "1M",
     }
-    
     # Ensure the current working directory is correct
     cwd = os.getcwd()
     print("Current working directory:", cwd)
-    
     # Construct the folder path
     folder_path = os.path.join(cwd, "Currencies", timespan)
     print(f"Folder path: {folder_path}")
-    
     # Get a list of all files in the folder
     files = glob.glob(os.path.join(folder_path, '*'))
-    
     # Iterate over all files in the given timeframe
     for file in files:
         data = os.path.basename(file)
@@ -149,9 +145,6 @@ def high_low_currencies(timespan):
             sub_files = glob.glob(os.path.join(sub_folder_path, f"{file_instrument}_{sub_time}.parquet"))
             pdb.set_trace()
             if not sub_files:
-                # If the data in the smaller timeframe doesn't exist, download it
-                #numeric_values = re.findall(r'\d+', sub_time)
-                #numeric_string = ''.join(numeric_values)
                 mt5.initialize()
                 create_databases.get_currency(f"{file_instrument}!", timeframe=sub_timeframe_map[timespan])
                 # Re-check for the sub_file after downloading

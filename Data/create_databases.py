@@ -225,7 +225,8 @@ if __name__ == '__main__':
     #use the get currency call in order to download currency data
     mt5.initialize()
     print(mt5.account_info())
-    currencies = ["EURUSD!", "GBPUSD!", "AUDUSD!", "USDJPY!", "USDCHF!", "USDCAD", "EURJPY!"]
+    #currencies = ["EURUSD!", "GBPUSD!", "AUDUSD!", "USDJPY!", "USDCHF!", "USDCAD", "EURJPY!"]
+    currencies = ["US SP 500"]
     print(currencies)
     for currency in currencies:
         #pdb.set_trace()
