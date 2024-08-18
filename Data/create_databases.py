@@ -223,18 +223,23 @@ def get_currency(currency = None, timeframe = None):
 #- Do the same thing, for one of the 3 other function (copy_rates_range, copy_ticks_from or copy_ticks_range)
 if __name__ == '__main__':
     #use the get currency call in order to download currency data
-    mt5.initialize()
-    print(mt5.account_info())
-    #currencies = ["EURUSD!", "GBPUSD!", "AUDUSD!", "USDJPY!", "USDCHF!", "USDCAD", "EURJPY!"]
-    currencies = ["US SP 500"]
-    print(currencies)
-    for currency in currencies:
+    #mt5.initialize()
+    #print(mt5.account_info())
+    stocks = ["IBM", "META", "APPL", "GOOG", "AMZN", "INTC", "TSLA", "MSFT", "NVDA"]
+
+
+    for stock in stocks:
         #pdb.set_trace()
-        get_currency(currency, timeframe = mt5.TIMEFRAME_M5)#  (symbol, timeframe = mt5.TIMEFRAME_M5)
+        now = datetime.now().date()
+        # Calculate the date and time five years ago
+        five_years_ago = now - timedelta(days=5*364)
+        
+        get_equity(stock, start_day=five_years_ago, multiplier=1, timespan='hour')
+        #get_currency(currency, timeframe = mt5.TIMEFRAME_M5)#  (symbol, timeframe = mt5.TIMEFRAME_M5)
     # Get the current date and time
-    now = datetime.now().date()
+    #now = datetime.now().date()
     # Calculate the date and time five years ago
-    five_years_ago = now - timedelta(days=5*364)
+    #five_years_ago = now - timedelta(days=5*364)
     # Print the date and time five years ago
-    print("The date and time five years ago was:", five_years_ago)
+    #print("The date and time five years ago was:", five_years_ago)
     #get_equity("IBM", start_day=five_years_ago) #(symbol, multiplier=1, timespan='hour', silent=False, start_day = None, end_day = None):
