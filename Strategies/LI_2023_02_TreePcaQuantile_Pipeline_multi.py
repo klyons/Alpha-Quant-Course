@@ -17,11 +17,15 @@ Good to know: Only one trade at time (we can't have a buy and a sell position in
 How to improve this algorithm?: Put variable Take-profit and Stop loss
 """
 
+
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+from sklearn.pipeline import Pipeline
 from joblib import dump, load
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 import pdb
+
 #for importing the quantreo library
 import sys
 sys.path.insert(0, '..')
@@ -108,7 +112,7 @@ class TreePcaQuantile_Pipeline_multi:
         # Create a PCA to remove multicolinearity and reduce the number of variable keeping many information
         #pca = PCA(n_components=3)
         #X_train_pca = pca.fit_transform(X_train_sc)
-
+        tscv = TimeSeriesSplit(n_splits=5)
         # Create the model
         pipe = Pipeline([
             ('sc', StandardScaler()),
@@ -124,7 +128,7 @@ class TreePcaQuantile_Pipeline_multi:
         }
 
         
-        ml_model = GridSearchCV(pipe, grid, cv=5)
+        ml_model = GridSearchCV(pipe, grid, cv=tscv)
         ml_model.fit(X_train, y_train)
 
         

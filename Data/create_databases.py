@@ -195,6 +195,7 @@ def get_equity(symbol, multiplier=1, timespan='hour', silent=False, start_day = 
                 break
     #return mdf
     save_path = get_equities_save_path(symbol, multiplier, timespan)
+    pdb.set_trace()
     mdf.to_parquet(save_path)
     #mdf.to_csv(save_path)
 
@@ -225,7 +226,8 @@ if __name__ == '__main__':
     #use the get currency call in order to download currency data
     #mt5.initialize()
     #print(mt5.account_info())
-    stocks = ["IBM", "META", "APPL", "GOOG", "AMZN", "INTC", "TSLA", "MSFT", "NVDA"]
+    #tlt = 20yr, ief = 10yr, shy = 2yr, iei = 5yr, 
+    stocks = ['SPY', 'IEF', 'TLT', 'SHY', 'IEI']#["IBM", "META", "APPL", "GOOG", "AMZN", "INTC", "TSLA", "MSFT", "NVDA"]
 
 
     for stock in stocks:
@@ -234,7 +236,7 @@ if __name__ == '__main__':
         # Calculate the date and time five years ago
         five_years_ago = now - timedelta(days=5*364)
         
-        get_equity(stock, start_day=five_years_ago, multiplier=1, timespan='hour')
+        get_equity(stock, start_day=five_years_ago, multiplier=3, timespan='minute')
         #get_currency(currency, timeframe = mt5.TIMEFRAME_M5)#  (symbol, timeframe = mt5.TIMEFRAME_M5)
     # Get the current date and time
     #now = datetime.now().date()

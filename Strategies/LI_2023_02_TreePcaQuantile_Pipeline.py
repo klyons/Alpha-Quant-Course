@@ -20,12 +20,16 @@ How to improve this algorithm?: Put variable Take-profit and Stop loss
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+from sklearn.pipeline import Pipeline
 from joblib import dump, load
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 import pdb
 #for importing the quantreo library
 import sys
 sys.path.insert(0, '..')
 from Quantreo.DataPreprocessing import *
+
+import numpy as np
 
 class TreePcaQuantile_Pipeline():
 
@@ -69,7 +73,6 @@ class TreePcaQuantile_Pipeline():
         self.var_buy_low, self.var_sell_low = None, None
 
     def get_features(self, data_sample):
-
         data_sample = sma_diff(data_sample, "close", self.sma_fast, self.sma_slow)
         data_sample = rsi(data_sample, "close", self.rsi_period)
         data_sample = previous_ret(data_sample, "close", 60)
@@ -77,8 +80,18 @@ class TreePcaQuantile_Pipeline():
         data_sample = ichimoku(data_sample, 27, 78)
         data_sample = candle_information(data_sample)
         data_sample = atr(data_sample,self.atr_period)
-        data_sample = data_sample.fillna(value=0)
-
+        # Replace infinity with NaN
+        data_sample = data_sample.replace([np.inf, -np.inf], np.nan)
+        
+        # Forward fill NaN values
+        data_sample = data_sample.fillna(method='ffill')
+        
+        # Backward fill any remaining NaN values
+        data_sample = data_sample.fillna(method='bfill')
+        
+        # If there are still NaN values, replace with 0
+        data_sample = data_sample.fillna(0)
+        
         return data_sample
 
     def train_model(self):
@@ -91,21 +104,21 @@ class TreePcaQuantile_Pipeline():
         # Create lists with the columns name of the features used and the target
         self.data_train = quantile_signal(self.data_train, self.look_ahead_period, pct_split=full_split)
         # !! As it is very time-consuming to compute & it is not variable, we compute it outside the function
-        pdb.set_trace()
+
         list_y = ["Signal"]
 
         # Split our dataset in a train and a test set
         split = int(len(self.data_train) * full_split)
         X_train, X_test, y_train, y_test = data_split(self.data_train, split, self.list_X, list_y)
 
+        # Define the time series split
+        tscv = TimeSeriesSplit(n_splits=5)
+
         # Initialize the standardization model
         sc = StandardScaler()
         X_train_sc = sc.fit_transform(X_train)
 
         # Create a PCA to remove multicolinearity and reduce the number of variable keeping many information
-        #pca = PCA(n_components=3)
-        #X_train_pca = pca.fit_transform(X_train_sc)
-
         # Create the model
         pipe = Pipeline([
             ('sc', StandardScaler()),
@@ -120,19 +133,18 @@ class TreePcaQuantile_Pipeline():
             'clf__max_depth': [5, 6, 7]
         }
 
-        
-        ml_model = GridSearchCV(pipe, grid, cv=5)
+        # Use TimeSeriesSplit with GridSearchCV
+        ml_model = GridSearchCV(pipe, grid, cv=tscv)
         ml_model.fit(X_train, y_train)
 
-        
         # Save models as attributes
         self.model = ml_model.best_estimator_
-        self.sc = sc
+        self.sc = ml_model.best_estimator_.named_steps['sc']
         self.pca = ml_model.best_estimator_.named_steps['pca']
 
         self.output_dictionary["model"] = ml_model
-        self.output_dictionary["sc"] = sc
-        self.output_dictionary["pca"] = pca
+        self.output_dictionary["sc"] = ml_model.best_estimator_.named_steps['sc']
+        self.output_dictionary["pca"] = ml_model.best_estimator_.named_steps['pca']
 
     def get_predictions(self):
         self.data = self.get_features(self.data)

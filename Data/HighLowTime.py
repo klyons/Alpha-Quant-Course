@@ -60,6 +60,7 @@ def high_low_equities(timespan):
         "1H": "30M",
         "30M": "10M",
         "10M": "1M",
+        "3M": "1M",
         "1M": "10S",
         "30S": "10S",
     }
@@ -85,21 +86,21 @@ def high_low_equities(timespan):
     # Iterate over all files in the given timeframe
     for file in files:
         data = os.path.basename(file)
-        file_instrument = data.split('_')[0]
+        instrument = data.split('_')[0]
         timeframe = data.split('_')[1].split('.')[0]
         sub_time = sub_timeframe_map.get(timeframe, "")
         
         if sub_time:
             sub_folder_path = os.path.join(cwd, instrument, sub_time)
-            sub_files = glob.glob(os.path.join(sub_folder_path, f"{file_instrument}_{sub_time}.parquet"))
+            sub_files = glob.glob(os.path.join(sub_folder_path, f"{instrument}_{sub_time}.parquet"))
             
             if not sub_files:
                 # If the data in the smaller timeframe doesn't exist, download it
                 numeric_values = re.findall(r'\d+', sub_time)
                 numeric_string = ''.join(numeric_values)
-                create_databases.get_equity(file_instrument, multiplier=int(numeric_string), timespan=timespan_map_reversed[sub_time[-1]])
+                create_databases.get_equity(instrument, multiplier=int(numeric_string), timespan=timespan_map_reversed[sub_time[-1]])
                 # Re-check for the sub_file after downloading
-                sub_files = glob.glob(os.path.join(sub_folder_path, f"{file_instrument}_{sub_time}.parquet"))
+                sub_files = glob.glob(os.path.join(sub_folder_path, f"{instrument}_{sub_time}.parquet"))
             
             if sub_files:
                 # If the data in the smaller timeframe exists, run the function that takes both files
@@ -143,7 +144,6 @@ def high_low_currencies(timespan):
         if sub_time:
             sub_folder_path = os.path.join(cwd, f"Currencies/{sub_time}")
             sub_files = glob.glob(os.path.join(sub_folder_path, f"{file_instrument}_{sub_time}.parquet"))
-            pdb.set_trace()
             if not sub_files:
                 mt5.initialize()
                 create_databases.get_currency(f"{file_instrument}!", timeframe=sub_timeframe_map[timespan])
@@ -171,4 +171,4 @@ def high_low_currencies(timespan):
 
 #high_low_equities("equities","1hour")
 if __name__ == '__main__':
-    high_low_currencies("5M")
+    high_low_equities("3M")
