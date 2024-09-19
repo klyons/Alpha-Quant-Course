@@ -15,7 +15,7 @@ How to improve this algorithm?: Try a non-linear model to see the difference of 
 """
 
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.model_selection import GridSearchCV, train_test_split, TimeSeriesSplit
 from sklearn.metrics import classification_report
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -89,17 +89,21 @@ class BinLogReg_Pipeline():
         split = int(len(self.data_train) * full_split)
         X_train, X_test, y_train, y_test = data_split(self.data_train, split, self.list_X, list_y)
 
+        #change cross validation to work with time series
+        tscv = TimeSeriesSplit(n_splits=3)
+
         # Create the model
         pipe = Pipeline([
             ('scaler', StandardScaler()),
-            ('logistic', LogisticRegression(solver='saga', tol=1e-2, max_iter=200, random_state=42))
+            ('logistic', LogisticRegression(solver='saga', tol=1e-2, max_iter=100, random_state=42))
         ])
 
         grid = {
-            'logistic__C': [1e-5, 1e-3, 1e-1, 1e0, 1e1, 1e2],
+            'logistic__C': [1e-3, 1e-1, 1e0, 1e1, 1e2],
             'logistic__penalty': ['l1', 'l2']
         }
-        ml_model = GridSearchCV(pipe, grid, cv=5, n_jobs=-1)
+        #add time series cross validation
+        ml_model = GridSearchCV(pipe, grid, cv=tscv, n_jobs=-1)
         ml_model.fit(X_train, y_train)
 
         # print model logistics and 

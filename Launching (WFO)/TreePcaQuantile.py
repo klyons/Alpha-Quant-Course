@@ -10,23 +10,23 @@ warnings.filterwarnings("ignore")
 
 
 # SAVE WEIGHTS
-def run_wfo(df = None, opt_params = None):
+def run_wfo(df = None, opt_params = None,train_length=10_000):
     save = False
     name = "LI_2023_02_TreePcaQuantile_EURUSD"
 
 
-    df = pd.read_parquet("../Data/Equities/3M/SPY_3M.parquet") #, index_col="time", parse_dates=True
+    df = pd.read_parquet("../Data/Equities/3M/SHY_3M.parquet") #, index_col="time", parse_dates=True
     pdb.set_trace()
 
     #this is for currencies
     #params_range = {
-    #    "tp": [0.005 + i*0.002 for i in range(3)],
+    #    "tp": [0.005 + i*0.002 for i in range(3)], 
     #    "sl": [-0.005 - i*0.002 for i in range(3)],
     #}
 
     params_range = {
-        "tp": [0.25 + i*0.05 for i in range(3)],
-        "sl": [-0.25 - i*0.05 for i in range(3)],
+        "tp": [0.50 + i*0.05 for i in range(1)],
+        "sl": [-0.50 - i*0.05 for i in range(1)],
     }
 
 
@@ -45,7 +45,6 @@ def run_wfo(df = None, opt_params = None):
 
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
 
-    WFO = WalkForwardOptimization(df, TreePcaQuantile_Pipeline, params_fixed, params_range,length_train_set=10_000, randomness=1.00)
     WFO.run_optimization()
 
     # Extract best parameters
@@ -69,4 +68,4 @@ def run_wfo(df = None, opt_params = None):
 if __name__ == "__main__":
     df = pd.read_parquet("../Data/Equities/3M/SPY_3M.parquet")
     run_wfo(df) 
-    
+

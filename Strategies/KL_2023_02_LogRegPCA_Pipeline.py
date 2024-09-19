@@ -15,11 +15,11 @@ How to improve this algorithm?: Try a non-linear model to see the difference of 
 """
 
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.model_selection import GridSearchCV, train_test_split, TimeSeriesSplit
+from sklearn.decomposition import PCA
 from sklearn.metrics import classification_report
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
 from joblib import dump, load
 
 #for importing the quantreo library

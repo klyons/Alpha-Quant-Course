@@ -130,7 +130,6 @@ class TreePcaQuantile_Pipeline_multi:
         
         ml_model = GridSearchCV(pipe, grid, cv=tscv)
         ml_model.fit(X_train, y_train)
-
         
         # Save models as attributes
         self.model = ml_model.best_estimator_

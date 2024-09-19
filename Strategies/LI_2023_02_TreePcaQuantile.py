@@ -19,6 +19,7 @@ How to improve this algorithm?: Put variable Take-profit and Stop loss
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 from joblib import dump, load
 #for importing the quantreo library
 import sys

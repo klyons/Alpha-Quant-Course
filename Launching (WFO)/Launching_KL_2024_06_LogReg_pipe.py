@@ -11,16 +11,21 @@ warnings.filterwarnings("ignore")
 
 # SAVE WEIGHTS
 save = False
-name = "LI_2023_02_BinLogReg_AUDUSD"
+name = "SHY_3M"
 
 
 #add aditinoal data here
-df = pd.read_csv("../Data/FixTimeBars/EURUSD_4H_Admiral.csv", index_col="time", parse_dates=True)
+#change symbol
+df = pd.read_parquet("../Data/Equities/3M/SHY_3M.parquet") # , index_col="time", parse_dates=True necessary for currencies.  
 
+
+
+#step 1: optimize tp and sl
+#step 2: optimize other params that fit the model
 
 params_range = {
-    "tp": [0.005 + i*0.001 for i in range(5)],
-    "sl": [-0.005 - i*0.001 for i in range(5)],
+    "tp": [0.50 + i*0.1 for i in range(5)],
+    "sl": [-0.50 - i*0.1 for i in range(5)],
     "atr":[3,4,5]
 }
 
@@ -30,14 +35,14 @@ params_fixed = {
     "sma_slow":80,
     "rsi":14,
     #"atr":5,
-    "cost": 0.0001,
+    "cost": 0.01, #0.0001 for currencies
     "leverage": 5,
     "list_X": ["SMA_diff", "RSI", "candle_way", "filling", "amplitude", "ATR", "SPAN_A", "SPAN_B", "BASE", "previous_ret"],
     "train_mode": True,
 }
 
 # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
-WFO = WalkForwardOptimization(df, LogRegPCA_Pipeline, params_fixed, params_range,length_train_set=5_000)
+WFO = WalkForwardOptimization(df, LogRegPCA_Pipeline, params_fixed, params_range,length_train_set=10_000)
 WFO.run_optimization()
 
 # Extract best parameters

@@ -11,7 +11,10 @@ warnings.filterwarnings("ignore")
 save = False
 name = "LI_2023_02_TreePcaQuantile_EURUSD"
 
-df = pd.read_parquet("../Data/Equities/3M/SPY_3M.parquet") #, index_col="time", parse_dates=True
+df_spy = pd.read_parquet("../Data/Equities/3M/SPY_3M.parquet") #, index_col="time", parse_dates=True
+df_tlt = pd.read_parquet("../Data/Equities/3M/TLT_3M.parquet") #, index_col="time", parse_dates=True
+df_iei = pd.read_parquet("../Data/Equities/3M/IEI_3M.parquet") #, index_col="time", parse_dates=True
+
 pdb.set_trace()
 
 #this is for currencies
@@ -43,12 +46,10 @@ params_fixed = {
 
 WFO = WalkForwardOptimizationMulti(
     main_data=df_spy,
-    additional_data=[df_aapl, df_msft],
-    TradingStrategy=TreePcaQuantile_Pipeline_multi,
-    fixed_parameters=params_fixed,
+    additioD ters=params_fixed,
     parameters_range=params_range,
     length_train_set=5_000,
-    randomness=1.00
+    randomness=1.aWE00
 )
 WFO.run_optimization()
 
