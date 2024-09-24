@@ -10,25 +10,26 @@ warnings.filterwarnings("ignore")
 
 
 # SAVE WEIGHTS
-def run_wfo(df = None, opt_params = None,train_length=10_000):
+def run_wfo(symbol='SPY', timeframe='10M', instrument='Equities', opt_params = None,train_length=10_000):
     save = False
     name = "LI_2023_02_TreePcaQuantile_EURUSD"
-
-
-    df = pd.read_parquet("../Data/Equities/3M/SHY_3M.parquet") #, index_col="time", parse_dates=True
+    costs = 0.01
+    df = pd.read_parquet(f"../Data/{instrument}/{timeframe}/{symbol}_{timeframe}.parquet")
+    # df = pd.read_parquet("../Data/Equities/3M/SHY_3M.parquet") #, index_col="time", parse_dates=True
     pdb.set_trace()
-
-    #this is for currencies
-    #params_range = {
-    #    "tp": [0.005 + i*0.002 for i in range(3)], 
-    #    "sl": [-0.005 - i*0.002 for i in range(3)],
-    #}
 
     params_range = {
         "tp": [0.50 + i*0.05 for i in range(1)],
         "sl": [-0.50 - i*0.05 for i in range(1)],
     }
 
+    #this is for currencies
+    if instrument == 'Currencies':
+        params_range = {
+            "tp": [0.005 + i*0.002 for i in range(3)], 
+            "sl": [-0.005 - i*0.002 for i in range(3)],
+        }
+        costs = 0.0001    
 
     params_fixed = {
         "look_ahead_period": 20,
@@ -36,7 +37,7 @@ def run_wfo(df = None, opt_params = None,train_length=10_000):
         "sma_fast": 30,
         "rsi": 21,
         "atr": 15,
-        "cost": 0.01, #0.0001,
+        "cost": costs, #0.0001,
         "leverage": 5,
         "list_X": ["SMA_diff", "RSI", "ATR", "candle_way", "filling", "amplitude", "SPAN_A", "SPAN_B", "BASE", "STO_RSI",
                 "STO_RSI_D", "STO_RSI_K", "previous_ret"],
@@ -44,7 +45,6 @@ def run_wfo(df = None, opt_params = None,train_length=10_000):
     }
 
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
-
     WFO.run_optimization()
 
     # Extract best parameters
@@ -66,6 +66,8 @@ def run_wfo(df = None, opt_params = None,train_length=10_000):
     WFO.display()
 
 if __name__ == "__main__":
-    df = pd.read_parquet("../Data/Equities/3M/SPY_3M.parquet")
-    run_wfo(df) 
+    symbol = 'SPY'
+    instrument = 'Equities'
+    multiplier = '3M'
+    run_wfo()
 
