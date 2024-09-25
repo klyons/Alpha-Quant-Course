@@ -16,6 +16,8 @@ How to improve this algorithm?: Try a non-linear model to see the difference of 
 
 from sklearn.svm import LinearSVC
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 #for importing the quantreo library
 import sys
 sys.path.insert(0, '..')

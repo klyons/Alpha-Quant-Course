@@ -34,7 +34,7 @@ params_fixed = {
     "sma_fast": 30,
     "sma_slow":80,
     "rsi":14,
-    #"atr":5,
+    "atr":5,
     "cost": 0.01, #0.0001 for currencies
     "leverage": 5,
     "list_X": ["SMA_diff", "RSI", "candle_way", "filling", "amplitude", "ATR", "SPAN_A", "SPAN_B", "BASE", "previous_ret"],
@@ -57,3 +57,10 @@ if save:
 # Show the results
 WFO.display()
 
+
+
+
+#rename after the strategy
+# pass in symbol into function call
+# create function to run the code
+#create main function to run the additional function

@@ -3,6 +3,7 @@ sys.path.insert(0, '..')
 from Strategies.LI_2023_02_TreePcaQuantile_Pipeline import *
 from Quantreo.Backtest import *
 from Quantreo.WalkForwardOptimization import *
+import Data.create_databases
 import pdb
 import warnings
 warnings.filterwarnings("ignore")
@@ -10,11 +11,16 @@ warnings.filterwarnings("ignore")
 
 
 # SAVE WEIGHTS
-def run_wfo(symbol='SPY', timeframe='10M', instrument='Equities', opt_params = None,train_length=10_000):
+def run_wfo(symbol='SPY', timespan='minute', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000):
     save = False
     name = "LI_2023_02_TreePcaQuantile_EURUSD"
     costs = 0.01
-    df = pd.read_parquet(f"../Data/{instrument}/{timeframe}/{symbol}_{timeframe}.parquet")
+    try:
+        df = pd.read_parquet(f"../Data/{instrument}/{timespan}/{symbol}_{timespan}.parquet")
+    except:
+        if instrument=='Equities':            
+            Data.create_databases.get_equity(symbol = symbol, multiplier=multiplier, timespan=timespan)
+        
     # df = pd.read_parquet("../Data/Equities/3M/SHY_3M.parquet") #, index_col="time", parse_dates=True
     pdb.set_trace()
 
@@ -37,7 +43,7 @@ def run_wfo(symbol='SPY', timeframe='10M', instrument='Equities', opt_params = N
         "sma_fast": 30,
         "rsi": 21,
         "atr": 15,
-        "cost": costs, #0.0001,
+        "cost": costs, # 0.0001,
         "leverage": 5,
         "list_X": ["SMA_diff", "RSI", "ATR", "candle_way", "filling", "amplitude", "SPAN_A", "SPAN_B", "BASE", "STO_RSI",
                 "STO_RSI_D", "STO_RSI_K", "previous_ret"],
@@ -68,6 +74,6 @@ def run_wfo(symbol='SPY', timeframe='10M', instrument='Equities', opt_params = N
 if __name__ == "__main__":
     symbol = 'SPY'
     instrument = 'Equities'
-    multiplier = '3M'
-    run_wfo()
+    timespan = '10M'
+    run_wfo(timespan=timespan)
 
