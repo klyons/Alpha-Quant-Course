@@ -12,7 +12,6 @@ sys.path.append(quantreo_path)
 #quantreo_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'quantreo'))
 # Add the quantreo folder to the Python path
 #sys.path.append(quantreo_path)
-pdb.set_trace()
 from Strategies.LI_2023_02_TreePcaQuantile_Pipeline import *  # TreePcaQuantile_Pipeline
 from Quantreo.Backtest import Backtest
 from Quantreo.WalkForwardOptimization import WalkForwardOptimization
@@ -34,22 +33,24 @@ def run(symbol='SPY', timespan='minute', multiplier=10, instrument='Equities', o
                     'hour': 'H',
                     'second': 'S'
                 }
-    try:
-        df = pd.read_parquet(f"../Data/{instrument}/{timespan}/{symbol}_{time_mapping[timespan]}{multiplier}.parquet")
-    except:
+    cwd = os.getcwd()
+    relative_path = f"quantreo/Data/{instrument}/{multiplier}{time_mapping[timespan]}/{symbol}_{multiplier}{time_mapping[timespan]}.parquet"
+    file_path = os.path.join(cwd, relative_path)
+    file_path = os.path.normpath(file_path)
+    pdb.set_trace()
+    if os.path.exists(file_path):
+        df = pd.read_parquet(file_path)
+    else:
         DataObg = DataHandler()
-        TimeCorrector = TimeframeAnalyzer() 
+        TimeCorrection = TimeframeAnalyzer() 
         if instrument=='Equities':            
             DataObg.get_equity(symbol = symbol, multiplier=multiplier, timespan=timespan)
             if instrument == 'Equities':
                 
-                TimeCorrector.high_low_equities(str({multiplier})+time_mapping[timespan])
+                TimeCorrection.high_low_equities(str({multiplier})+time_mapping[timespan])
         if instrument == 'Currencies':
             DataObg.get_currency(symbol = symbol, timeframe=mt5.TIMEFRAME_M5) # mt5.TIMEFRAME_H1 ect
-            TimeCorrector.high_low_currencies(str({multiplier})+time_mapping[timespan])
-            
-    # df = pd.read_parquet("../Data/Equities/3M/SHY_3M.parquet") #, index_col="time", parse_dates=True
-    pdb.set_trace()
+            TimeCorrection.high_low_currencies(str({multiplier})+time_mapping[timespan])
 
     params_range = {
         "tp": [0.50 + i*0.05 for i in range(1)],
@@ -103,7 +104,7 @@ if __name__ == "__main__":
     symbol = 'SPY'
     instrument = 'Equities'
     timespan = 'minute'
-    multiplier=3
+    multiplier = 3
     # symbol='SPY', timespan='minute', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000
     run(symbol=symbol, instrument=instrument, timespan=timespan, multiplier=multiplier )
 
