@@ -31,7 +31,7 @@ import sys
 sys.path.insert(0, '..')
 from Quantreo.DataPreprocessing import *
 
-class TreePcaQuantile_Pipeline_multi:
+class TreePcaQuantilePipelinemulti:
 
     def __init__(self, data, parameters, *args):
         # Set parameters

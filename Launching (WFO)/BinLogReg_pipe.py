@@ -2,7 +2,7 @@ import sys, pdb, os
 import pdb
 import warnings
 import MetaTrader5 as mt5
-# Get the current working directory
+
 current_working_directory = os.getcwd()
 # Construct the path to the quantreo folder
 quantreo_path = os.path.join(current_working_directory, 'quantreo')
@@ -12,15 +12,14 @@ sys.path.append(quantreo_path)
 #quantreo_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'quantreo'))
 # Add the quantreo folder to the Python path
 #sys.path.append(quantreo_path)
-from Strategies.LI_2023_02_TreePcaQuantile_Pipeline import *  # TreePcaQuantile_Pipeline
+from Strategies.LI_2023_02_BinLogReg_Pipeline import *  # TreePcaQuantile_Pipeline
 from Quantreo.Backtest import Backtest
 from Quantreo.WalkForwardOptimization import WalkForwardOptimization
 from Data.create_databases import DataHandler
 from Data.HighLowTime import TimeframeAnalyzer
 
+import warnings
 warnings.filterwarnings("ignore")
-
-
 
 # SAVE WEIGHTS
 def run(symbol='SPY', timespan='minute', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000):
@@ -34,9 +33,11 @@ def run(symbol='SPY', timespan='minute', multiplier=10, instrument='Equities', o
                     'second': 'S'
                 }
     cwd = os.getcwd()
+    
     relative_path = f"quantreo/Data/{instrument}/{multiplier}{time_mapping[timespan]}/{symbol}_{multiplier}{time_mapping[timespan]}.parquet"
     file_path = os.path.join(cwd, relative_path)
     file_path = os.path.normpath(file_path)
+    
     if os.path.exists(file_path):
         df = pd.read_parquet(file_path)
         df = df.head(200000)
@@ -50,9 +51,17 @@ def run(symbol='SPY', timespan='minute', multiplier=10, instrument='Equities', o
                 
                 TimeCorrection.high_low_equities(str({multiplier})+time_mapping[timespan])
         if instrument == 'Currencies':
-            DataObg.get_currency(symbol = symbol, timeframe=mt5.TIMEFRAME_M5) # mt5.TIMEFRAME_H1 ect
+            currency_map = {
+                '1M': mt5.TIMEFRAME_M1,
+                '5M': mt5.TIMEFRAME_M5,
+                '10M': mt5.TIMEFRAME_M10,
+                'H1': mt5.TIMEFRAME_H1,
+                'H4': mt5.TIMEFRAME_H4,
+                'D1': mt5.TIMEFRAME_D1
+            }
+            DataObg.get_currency(symbol = symbol, timeframe=currency_map[(time_mapping[{timespan}],{multiplier})]) # mt5.TIMEFRAME_H1 ect
             TimeCorrection.high_low_currencies(str({multiplier})+time_mapping[timespan])
-    costs = 0.001
+    costs = 0.01
     params_range = {
         "tp": [0.20 + i*0.05 for i in range(1)],
         "sl": [-0.20 - i*0.05 for i in range(1)],
@@ -65,22 +74,20 @@ def run(symbol='SPY', timespan='minute', multiplier=10, instrument='Equities', o
             "sl": [-0.005 - i*0.002 for i in range(3)],
         }
         costs = 0.0001    
-
     params_fixed = {
         "look_ahead_period": 20,
-        "sma_slow": 120,
         "sma_fast": 30,
-        "rsi": 21,
-        "atr": 15,
-        "cost": costs, # 0.0001,
+        "sma_slow":80,
+        "rsi":14,
+        "atr":5,
+        "cost": 0.0001,
         "leverage": 5,
-        "list_X": ["SMA_diff", "RSI", "ATR", "candle_way", "filling", "amplitude", "SPAN_A", "SPAN_B", "BASE", "STO_RSI",
-                "STO_RSI_D", "STO_RSI_K", "previous_ret"],
+        "list_X": ["SMA_diff", "RSI", "ATR"],
         "train_mode": True,
     }
 
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
-    WFO = WalkForwardOptimization(df, TreePcaQuantile_Pipeline, params_fixed, params_range,length_train_set=10_000, randomness=1.00)
+    WFO = WalkForwardOptimization(df, BinLogReg_Pipeline, params_fixed, params_range,length_train_set=5_000)
     WFO.run_optimization()
 
     # Extract best parameters
@@ -88,24 +95,20 @@ def run(symbol='SPY', timespan='minute', multiplier=10, instrument='Equities', o
     print("BEST PARAMETERS")
     print(params)
 
-    # Extract the
     model = params["model"]
-    sc = params["sc"]
-    pca = params["pca"]
-
     if save:
         dump(model, f"../models/saved/{name}_model.jolib")
-        dump(sc, f"../models/saved/{name}_sc.jolib")
-        dump(pca, f"../models/saved/{name}_pca.jolib")
 
     # Show the results
     WFO.display()
 
 if __name__ == "__main__":
-    symbol = 'SPY'
-    instrument = 'Equities'
+    #populate with what you want
+    symbol = 'EURUSD'
     timespan = 'minute'
-    multiplier = 3
-    # symbol='SPY', timespan='minute', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000
-    run(symbol=symbol, instrument=instrument, timespan=timespan, multiplier=multiplier )
-
+    multiplier = 5
+    train_length = 10_000
+    instrument = 'Currencies' #Currency or Equity
+    #this takes as inputs symbol timeframe, length, instrument
+    run(symbol, timespan, multiplier=multiplier, instrument = instrument) #instrument, timeframe, train_length=10_000, 
+    
