@@ -1,11 +1,12 @@
 import os
 import glob
-import re
+import re, pdb
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import MetaTrader5 as mt5
-
+from Data.create_databases import DataHandler
+import pyarrow.parquet as pq
 class TimeframeAnalyzer:
     def __init__(self):
         pass
@@ -54,7 +55,15 @@ class TimeframeAnalyzer:
 
         return df
 
+    def get_paths(self, cwd, timespan, sub_timeframe_map):
+        folder_path = os.path.join(cwd, r"quantreo\Data\Equities")
+        parent_path = os.path.join(folder_path, timespan)
+        child_timespan = sub_timeframe_map.get(timespan, timespan)
+        child_path = os.path.join(folder_path, child_timespan)
+        return parent_path, child_path
+    
     def high_low_equities(self, timespan):
+        cwd = os.getcwd()
         sub_timeframe_map = {
             "1D": "4H",
             "4H": "1H",
@@ -65,50 +74,31 @@ class TimeframeAnalyzer:
             "1M": "10S",
             "30S": "10S",
         }
+        timespan_map_reversed = {v: k for k, v in sub_timeframe_map.items()}
 
-        timespan_map_reversed = {
-            "D": "day",
-            "H": "hour",
-            "M": "minute",
-            "S": "second"
-        }
+        parent_path, child_path = self.get_paths(cwd, timespan, sub_timeframe_map)
 
-        # Ensure the current working directory is correct
-        cwd = os.getcwd()
-        print("Current working directory:", cwd)
-
-        # Construct the folder path
-        folder_path = os.path.join(cwd, "Equities", timespan)
-        print(f"Folder path: {folder_path}")
-
-        # Get a list of all files in the folder
-        files = glob.glob(os.path.join(folder_path, '*'))
-
-        # Iterate over all files in the given timeframe
-        for file in files:
+        for file in glob.glob(os.path.join(parent_path, "*.parquet")):
             data = os.path.basename(file)
-            instrument = data.split('_')[0]
-            timeframe = data.split('_')[1].split('.')[0]
+            instrument, timeframe = data.split('_')[0], data.split('_')[1].split('.')[0]
             sub_time = sub_timeframe_map.get(timeframe, "")
 
             if sub_time:
-                sub_folder_path = os.path.join(cwd, instrument, sub_time)
-                sub_files = glob.glob(os.path.join(sub_folder_path, f"{instrument}_{sub_time}.parquet"))
-
+                sub_files = glob.glob(os.path.join(child_path, f"{instrument}_{sub_time}.parquet"))
                 if not sub_files:
-                    # If the data in the smaller timeframe doesn't exist, download it
                     numeric_values = re.findall(r'\d+', sub_time)
                     numeric_string = ''.join(numeric_values)
-                    create_databases.get_equity(instrument, multiplier=int(numeric_string), timespan=timespan_map_reversed[sub_time[-1]])
-                    # Re-check for the sub_file after downloading
-                    sub_files = glob.glob(os.path.join(sub_folder_path, f"{instrument}_{sub_time}.parquet"))
+                    DataObj = DataHandler()
+                    DataObj.get_equity(instrument, multiplier=int(numeric_string), timespan=timespan_map_reversed[sub_time[-1]])
+                    sub_files = glob.glob(os.path.join(child_path, f"{instrument}_{sub_time}.parquet"))
 
                 if sub_files:
-                    # If the data in the smaller timeframe exists, run the function that takes both files
                     sub_file = sub_files[0]
-                    high_tf = pd.read_parquet(file)
-                    sub_tf = pd.read_parquet(sub_file)
-                    self.find_timestamp_extremum(high_tf, sub_tf)
+                    schema = pq.read_schema(file)
+                    if 'high_time' not in schema.names and 'low_time' not in schema.names:
+                        high_tf = pd.read_parquet(file)
+                        sub_tf = pd.read_parquet(sub_file)
+                        self.find_timestamp_extremum(high_tf, sub_tf)
 
     def high_low_currencies(self, timespan):
         sub_timeframe_map = {
@@ -146,7 +136,8 @@ class TimeframeAnalyzer:
                 sub_files = glob.glob(os.path.join(sub_folder_path, f"{file_instrument}_{sub_time}.parquet"))
                 if not sub_files:
                     mt5.initialize()
-                    create_databases.get_currency(f"{file_instrument}!", timeframe=sub_timeframe_map[timespan])
+                    DataObj = DataHandler()
+                    DataObj.get_currency(f"{file_instrument}!", timeframe=sub_timeframe_map[timespan])
                     # Re-check for the sub_file after downloading
                     sub_files = glob.glob(os.path.join(sub_folder_path, f"{file_instrument}_{sub_time}.parquet"))
 

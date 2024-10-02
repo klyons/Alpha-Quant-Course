@@ -162,7 +162,6 @@ class WalkForwardOptimization:
 
         # !! We put the last index value as index
         # because WITHOUT that when you replace the criterion value later you will replace all value with the same index
-        pdb.set_trace()
         self.best_params_sample_df.index = self.train_sample.index[-2:-1]
 
         # We add the best params to the dataframe which contains all the best params for each period

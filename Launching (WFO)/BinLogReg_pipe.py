@@ -2,16 +2,13 @@ import sys, pdb, os
 import pdb
 import warnings
 import MetaTrader5 as mt5
-
+# Get the current working directory
 current_working_directory = os.getcwd()
 # Construct the path to the quantreo folder
 quantreo_path = os.path.join(current_working_directory, 'quantreo')
 # Add the quantreo folder to the Python path
 sys.path.append(quantreo_path)
-# Get the absolute path of the quantreo folder
-#quantreo_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'quantreo'))
-# Add the quantreo folder to the Python path
-#sys.path.append(quantreo_path)
+
 from Strategies.LI_2023_02_BinLogReg_Pipeline import *  # TreePcaQuantile_Pipeline
 from Quantreo.Backtest import Backtest
 from Quantreo.WalkForwardOptimization import WalkForwardOptimization
@@ -22,55 +19,39 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # SAVE WEIGHTS
-def run(symbol='SPY', timespan='minute', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000):
+def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000):
     save = False
-    name = f"TreePcaQuantile_{symbol}_{multiplier}{timespan}"
+    name = f"BinLogReg_{symbol}_{multiplier}{timespan}"
     
-    #need to create different mapping for currencies
-    time_mapping = {
-                    'minute': 'M',
-                    'hour': 'H',
-                    'second': 'S'
-                }
     cwd = os.getcwd()
-    
-    relative_path = f"quantreo/Data/{instrument}/{multiplier}{time_mapping[timespan]}/{symbol}_{multiplier}{time_mapping[timespan]}.parquet"
+    relative_path = f"quantreo/Data/{instrument}/{multiplier}{timespan}/{symbol}_{multiplier}{timespan}.parquet"
     file_path = os.path.join(cwd, relative_path)
     file_path = os.path.normpath(file_path)
-    
-    DataObg = DataHandler()
-    TimeCorrection = TimeframeAnalyzer() 
-    if instrument=='Equities':
-        if os.path.exists(file_path):
-            df = pd.read_parquet(file_path)
-            df = df.head(200000)
-            pdb.set_trace()
-        else:            
-            DataObg.get_equity(symbol = symbol, multiplier=multiplier, timespan=timespan)
-            
-        TimeCorrection.high_low_equities(str({multiplier})+time_mapping[timespan])
-    if instrument == 'Currencies':
-        if os.path.exists(file_path):
-            df = pd.read_parquet(file_path)
-            df = df.head(200000)
-            pdb.set_trace()
-        else:
-            DataObg.get_currency(symbol = symbol, timeframe=currency_map[(time_mapping[{timespan}],{multiplier})]) # mt5.TIMEFRAME_H1 ect
-        currency_map = {
-            '1M': mt5.TIMEFRAME_M1,
-            '5M': mt5.TIMEFRAME_M5,
-            '10M': mt5.TIMEFRAME_M10,
-            'H1': mt5.TIMEFRAME_H1,
-            'H4': mt5.TIMEFRAME_H4,
-            'D1': mt5.TIMEFRAME_D1
-        }
-        TimeCorrection.high_low_currencies(str({multiplier})+time_mapping[timespan])
-    costs = 0.01
+    #instantiate data classes
+    DataObj = DataHandler()
+    TimeCorrection = TimeframeAnalyzer()
+    if os.path.exists(file_path):
+        df = pd.read_parquet(file_path)
+        df = df.head(200000)
+        if 'high_time' not in df.columns or 'low_time' not in df.columns:
+            TimeCorrection.high_low_equities(f'{multiplier}{timespan}')
+            #print("Columns 'high_time' or 'low_time' are present in the dataframe.")
+        pdb.set_trace()
+    else:         
+        if instrument=='Equities':            
+            DataObj.get_equity(symbol = symbol, multiplier=multiplier, timespan=timespan)
+            if instrument == 'Equities':
+                #need to run high low for equities
+                # deb
+                TimeCorrection.high_low_equities(f'{multiplier}{timespan}')
+        if instrument == 'Currencies':
+            DataObj.get_currency(symbol = symbol, timeframe=mt5.TIMEFRAME_M5) # mt5.TIMEFRAME_H1 ect
+            TimeCorrection.high_low_currencies(f'{multiplier}{timespan}')
+    costs = 0.001
     params_range = {
         "tp": [0.20 + i*0.05 for i in range(1)],
         "sl": [-0.20 - i*0.05 for i in range(1)],
     }
-
     #this is for currencies
     if instrument == 'Currencies':
         params_range = {
@@ -78,6 +59,7 @@ def run(symbol='SPY', timespan='minute', multiplier=10, instrument='Equities', o
             "sl": [-0.005 - i*0.002 for i in range(3)],
         }
         costs = 0.0001    
+
     params_fixed = {
         "look_ahead_period": 20,
         "sma_fast": 30,
@@ -89,7 +71,7 @@ def run(symbol='SPY', timespan='minute', multiplier=10, instrument='Equities', o
         "list_X": ["SMA_diff", "RSI", "ATR"],
         "train_mode": True,
     }
-
+    pdb.set_trace()
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
     WFO = WalkForwardOptimization(df, BinLogReg_Pipeline, params_fixed, params_range,length_train_set=10_000, anchored=True)
     WFO.run_optimization()

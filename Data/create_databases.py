@@ -22,7 +22,8 @@ class DataHandler:
             "second": "S"
         }
         t = timespan_map.get(timespan, "")
-        return os.path.join(f"Equities/{multiplier}{t}/{symbol}_{multiplier}{t}.parquet")
+        cwd = os.getcwd()
+        return os.path.join(cwd, f"quantreo/Data/Equities/{multiplier}{t}/{symbol}_{multiplier}{t}.parquet")
 
     def get_save_path(self, symbol, timeframe):
         symbol = symbol.replace("!", "_")
