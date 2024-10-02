@@ -116,10 +116,10 @@ class DataHandler:
             df["date_time"] = pd.to_datetime(df["t"], unit="ms")
             if ':' in symbol:
                 df = df[["date_time", "o", "h", "c", "l"]]
-                df.columns = ["date_time", "open", "high", "low", "close"]
+                df.columns = ["date_time", "open", "high", "close", "low"]
             if not ':' in symbol:
                 df = df[["date_time", "o", "h", "c", "l", "v", "vw"]]
-                df.columns = ["date_time", "open", "high", "low", "close", "volume", "vwap"]
+                df.columns = ["date_time", "open", "high", "close", "low", "volume", "vwap"]
             df = df.sort_values("date_time")
             if not silent and not df.empty:
                 print(f"Downloaded {symbol}: {df['date_time'].iloc[0]} - {df['date_time'].iloc[-1]}")
