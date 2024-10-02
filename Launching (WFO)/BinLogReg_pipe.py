@@ -47,6 +47,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         if instrument == 'Currencies':
             DataObj.get_currency(symbol = symbol, timeframe=mt5.TIMEFRAME_M5) # mt5.TIMEFRAME_H1 ect
             TimeCorrection.high_low_currencies(f'{multiplier}{timespan}')
+        df = pd.read_parquet(file_path)
     costs = 0.001
     params_range = {
         "tp": [0.20 + i*0.05 for i in range(1)],

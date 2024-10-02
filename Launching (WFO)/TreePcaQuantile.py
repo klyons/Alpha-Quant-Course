@@ -36,7 +36,6 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         if 'high_time' not in df.columns or 'low_time' not in df.columns:
             TimeCorrection.high_low_equities(f'{multiplier}{timespan}')
             #print("Columns 'high_time' or 'low_time' are present in the dataframe.")
-        pdb.set_trace()
     else:       
         if instrument=='Equities':            
             DataObj.get_equity(symbol = symbol, multiplier=multiplier, timespan=timespan)
@@ -47,6 +46,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         if instrument == 'Currencies':
             DataObj.get_currency(symbol = symbol, timeframe=mt5.TIMEFRAME_M5) # mt5.TIMEFRAME_H1 ect
             TimeCorrection.high_low_currencies(f'{multiplier}{timespan}')
+        df = pd.read_parquet(file_path)
     costs = 0.001
     params_range = {
         "tp": [0.20 + i*0.05 for i in range(1)],

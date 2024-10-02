@@ -76,7 +76,7 @@ class DataHandler:
         else:
             print("No tickers downloaded")
 
-    def pull_data(self, symbol, multiplier, timespan, start_time):
+    def pull_data(self, symbol, multiplier, timespan, start_time = None):  #added = None
         sort = "asc"
         if not start_time:
             start_time = datetime.today() - timedelta(days=365*5)
@@ -104,8 +104,19 @@ class DataHandler:
     def get_equity(self, symbol, multiplier=1, timespan='hour', silent=False, start_day=None, end_day=None):
         bars = []
         mdf = pd.DataFrame()
+        if len(timespan) < 2:
+            timespan_map = {
+                "D": "day",
+                "H": "hour",
+                "M": "minute",
+                "S": "second"
+            }
+            timespan = timespan_map.get(timespan, "")
         interval = timespan
         symbol = symbol.upper()
+        if not start_day:
+            start_day = datetime.today() - timedelta(days=364*5)
+            start_day = datetime.date(start_day)
         while(1):
             bars = self.pull_data(symbol, timespan=timespan, start_time=start_day, multiplier=multiplier)
             if not bars:

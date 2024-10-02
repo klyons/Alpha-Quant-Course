@@ -86,10 +86,11 @@ class TimeframeAnalyzer:
             if sub_time:
                 sub_files = glob.glob(os.path.join(child_path, f"{instrument}_{sub_time}.parquet"))
                 if not sub_files:
-                    numeric_values = re.findall(r'\d+', sub_time)
-                    numeric_string = ''.join(numeric_values)
+                    pdb.set_trace()
+                    numeric_values = int(re.findall(r'\d+', sub_time)[0])
+                    sub_timespan = re.sub(r'\d+', '', timeframe)
                     DataObj = DataHandler()
-                    DataObj.get_equity(instrument, multiplier=int(numeric_string), timespan=timespan_map_reversed[sub_time[-1]])
+                    DataObj.get_equity(instrument, multiplier=numeric_values, timespan=sub_timespan)
                     sub_files = glob.glob(os.path.join(child_path, f"{instrument}_{sub_time}.parquet"))
 
                 if sub_files:
