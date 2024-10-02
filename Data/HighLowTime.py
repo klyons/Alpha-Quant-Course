@@ -4,6 +4,7 @@ import re
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+import MetaTrader5 as mt5
 
 class TimeframeAnalyzer:
     def __init__(self):
