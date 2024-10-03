@@ -22,7 +22,7 @@ from sklearn.preprocessing import StandardScaler
 from joblib import dump, load
 
 #for importing the quantreo library
-import sys
+import sys, pdb
 sys.path.insert(0, '..')
 from Quantreo.DataPreprocessing import *
 
@@ -100,7 +100,7 @@ class BinLogReg_Pipeline():
 
         grid = {
             'logistic__C': [1e-3, 1e-1, 1e0, 1e1, 1e2],
-            'logistic__penalty': ['l1', 'l2']
+            'logistic__penalty': ['l1']  # consider testing over l2 as well
         }
         #add time series cross validation
         ml_model = GridSearchCV(pipe, grid, cv=tscv, n_jobs=-1)
@@ -128,6 +128,9 @@ class BinLogReg_Pipeline():
         :param i: row number
         :return: Open a buy or sell position using a random signal
         """
+        if self.data.index.name == 'date_time':
+            self.data.rename_axis('time', inplace=True)
+            
         if time not in self.data.index:
             return 0, self.entry_time
 

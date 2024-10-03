@@ -32,38 +32,32 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     TimeCorrection = TimeframeAnalyzer()
     if os.path.exists(file_path):
         df = pd.read_parquet(file_path)
-        df = df.head(200000)
+        df = df.head(500000)
         if 'high_time' not in df.columns or 'low_time' not in df.columns:
             TimeCorrection.high_low_equities(f'{multiplier}{timespan}')
+            df = TimeCorrection.get_data()
+            df.to_parquet(file_path)
             #print("Columns 'high_time' or 'low_time' are present in the dataframe.")
     else:       
         if instrument=='Equities':            
             DataObj.get_equity(symbol = symbol, multiplier=multiplier, timespan=timespan)
-            if instrument == 'Equities':
-                #need to run high low for equities
-                # deb
-                TimeCorrection.high_low_equities(f'{multiplier}{timespan}')
+            TimeCorrection.high_low_equities(f'{multiplier}{timespan}')
+            df = TimeCorrection.get_data()
+            df.to_parquet(file_path)
         if instrument == 'Currencies':
             DataObj.get_currency(symbol = symbol, timeframe=mt5.TIMEFRAME_M5) # mt5.TIMEFRAME_H1 ect
             TimeCorrection.high_low_currencies(f'{multiplier}{timespan}')
         df = pd.read_parquet(file_path)
-    costs = 0.001
+    costs = 0.0001
     params_range = {
-        "tp": [0.20 + i*0.05 for i in range(1)],
-        "sl": [-0.20 - i*0.05 for i in range(1)],
-    }
-    #this is for currencies
-    if instrument == 'Currencies':
-        params_range = {
-            "tp": [0.005 + i*0.002 for i in range(3)], 
-            "sl": [-0.005 - i*0.002 for i in range(3)],
-        }
-        costs = 0.0001    
+        "tp": [0.003 + i*0.002 for i in range(3)],
+        "sl": [-0.003 - i*0.002 for i in range(3)],
+    }   
 
     params_fixed = {
-        "look_ahead_period": 20,
-        "sma_slow": 120,
-        "sma_fast": 30,
+        "look_ahead_period": 5,  #this parameter sets the 
+        "sma_slow": 60,
+        "sma_fast": 20,
         "rsi": 21,
         "atr": 15,
         "cost": costs, # 0.0001,

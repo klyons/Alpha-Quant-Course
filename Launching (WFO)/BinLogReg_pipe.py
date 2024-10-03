@@ -21,7 +21,7 @@ warnings.filterwarnings("ignore")
 # SAVE WEIGHTS
 def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000):
     save = False
-    name = f"BinLogReg_{symbol}_{multiplier}{timespan}"
+    name = f"TreePcaQuantile_{symbol}_{multiplier}{timespan}"
     
     cwd = os.getcwd()
     relative_path = f"quantreo/Data/{instrument}/{multiplier}{timespan}/{symbol}_{multiplier}{timespan}.parquet"
@@ -35,46 +35,40 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         df = df.head(200000)
         if 'high_time' not in df.columns or 'low_time' not in df.columns:
             TimeCorrection.high_low_equities(f'{multiplier}{timespan}')
+            df = TimeCorrection.get_data()
+            df.to_parquet(file_path)
             #print("Columns 'high_time' or 'low_time' are present in the dataframe.")
-        pdb.set_trace()
-    else:         
+    else:       
         if instrument=='Equities':            
             DataObj.get_equity(symbol = symbol, multiplier=multiplier, timespan=timespan)
-            if instrument == 'Equities':
-                #need to run high low for equities
-                # deb
-                TimeCorrection.high_low_equities(f'{multiplier}{timespan}')
+            TimeCorrection.high_low_equities(f'{multiplier}{timespan}')
+            df = TimeCorrection.get_data()
+            df.to_parquet(file_path)
         if instrument == 'Currencies':
             DataObj.get_currency(symbol = symbol, timeframe=mt5.TIMEFRAME_M5) # mt5.TIMEFRAME_H1 ect
             TimeCorrection.high_low_currencies(f'{multiplier}{timespan}')
         df = pd.read_parquet(file_path)
-    costs = 0.001
+    
+    #these parameters are measured in percents so they can stay as is .005 is 0.5%
+    costs = 0.0001
     params_range = {
-        "tp": [0.20 + i*0.05 for i in range(1)],
-        "sl": [-0.20 - i*0.05 for i in range(1)],
+        "tp": [0.003 + i*0.002 for i in range(3)],
+        "sl": [-0.003 - i*0.002 for i in range(3)],
     }
-    #this is for currencies
-    if instrument == 'Currencies':
-        params_range = {
-            "tp": [0.005 + i*0.002 for i in range(3)], 
-            "sl": [-0.005 - i*0.002 for i in range(3)],
-        }
-        costs = 0.0001    
 
     params_fixed = {
-        "look_ahead_period": 20,
+        "look_ahead_period": 5,
         "sma_fast": 30,
         "sma_slow":80,
         "rsi":14,
         "atr":5,
-        "cost": costs,
+        "cost": 0.0001,
         "leverage": 5,
         "list_X": ["SMA_diff", "RSI", "ATR"],
         "train_mode": True,
     }
-    pdb.set_trace()
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
-    WFO = WalkForwardOptimization(df, BinLogReg_Pipeline, params_fixed, params_range,length_train_set=10_000, anchored=True)
+    WFO = WalkForwardOptimization(df, BinLogReg_Pipeline, params_fixed, params_range,length_train_set=10_000, randomness=1.00)
     WFO.run_optimization()
 
     # Extract best parameters
@@ -94,7 +88,8 @@ if __name__ == "__main__":
     
     symbol = 'SPY'
     instrument = 'Equities'
-    timespan = 'minute'
+    # use 'M' for minute 'H' for hour and 'S' for second
+    timespan = 'M'
     multiplier = 3
     # symbol='SPY', timespan='minute', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000
     run(symbol=symbol, instrument=instrument, timespan=timespan, multiplier=multiplier )

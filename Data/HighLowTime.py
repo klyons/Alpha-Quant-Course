@@ -7,9 +7,11 @@ from tqdm import tqdm
 import MetaTrader5 as mt5
 from Data.create_databases import DataHandler
 import pyarrow.parquet as pq
+
+
 class TimeframeAnalyzer:
     def __init__(self):
-        pass
+        self._data = None
 
     def find_timestamp_extremum(self, df, df_lower_timeframe):
         """
@@ -50,10 +52,10 @@ class TimeframeAnalyzer:
 
         # if percentage_garbage_row<95:
         print(f"WARNINGS: Garbage row: {'%.2f' % percentage_garbage_row} %")
-
-        df = df.iloc[:-1]
-
-        return df
+        self._data = df.iloc[:-1]
+        
+    def get_data(self):
+        return self._data
 
     def get_paths(self, cwd, timespan, sub_timeframe_map):
         folder_path = os.path.join(cwd, r"quantreo\Data\Equities")
@@ -88,9 +90,8 @@ class TimeframeAnalyzer:
                 if not sub_files:
                     pdb.set_trace()
                     numeric_values = int(re.findall(r'\d+', sub_time)[0])
-                    sub_timespan = re.sub(r'\d+', '', timeframe)
-                    DataObj = DataHandler()
-                    DataObj.get_equity(instrument, multiplier=numeric_values, timespan=sub_timespan)
+                    sub_timespan = re.sub(r'\d+', '', timeframe)                    
+                    DataHandler().get_equity(instrument, multiplier=numeric_values, timespan=sub_timespan)
                     sub_files = glob.glob(os.path.join(child_path, f"{instrument}_{sub_time}.parquet"))
 
                 if sub_files:
