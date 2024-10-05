@@ -50,12 +50,12 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         df = pd.read_parquet(file_path)
     costs = 0.0001
     params_range = {
-        "tp": [0.003 + i*0.002 for i in range(3)],
-        "sl": [-0.003 - i*0.002 for i in range(3)],
+        "tp": [0.004 + i*0.001 for i in range(3)],
+        "sl": [-0.004 - i*0.001 for i in range(3)],
     }   
 
     params_fixed = {
-        "look_ahead_period": 5,  #this parameter sets the 
+        "look_ahead_period": 5,  #this parameter sets the dependent variable
         "sma_slow": 60,
         "sma_fast": 20,
         "rsi": 21,
@@ -90,7 +90,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     WFO.display()
 
 if __name__ == "__main__":
-    symbol = 'SPY'
+    symbol = 'QQQ'
     instrument = 'Equities'
     # use 'M' for minute 'H' for hour and 'S' for second
     timespan = 'M'
