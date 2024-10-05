@@ -216,10 +216,28 @@ class WalkForwardOptimization:
         # Create the sub-samples
         self.get_sub_samples()
 
+        # The data is a list of pandas dataframes. So grab the starting date
+        # from the first element in list and then the ending date
+        # from the last element in the test_samples dataframe
+        if len(self.train_samples) > 0 and len(self.test_samples) > 0:
+            start = self.train_samples[0].index[0]
+            start = start.strftime("%m-%d-%y %H:%M")
+            end = self.test_samples[0].index[-1]
+            end.strftime("%m-%d-%y %H:%M")
+            print(f"Dataset range --> {start} - {end}")
+
         # Run the optimization
+        total = len(self.train_samples)
+        current = 1
         for self.train_sample, self.test_sample in tqdm(zip(self.train_samples, self.test_samples)):
+            start = self.train_sample.index[0]
+            start = start.strftime("%m-%d-%y %H:%M")
+            end = self.test_sample.index[-1]
+            end = end.strftime("%m-%d-%y %H:%M")
+            print(f"Block {current}/{total} --> {start} - {end}")
             self.get_best_params_train_set()
             self.test_best_params()
+            current += 1
 
     def display(self):
         # Empty dataframe that will be filled by the result on each period
