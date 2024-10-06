@@ -1,7 +1,8 @@
 import itertools
 import pdb
 from Quantreo.Backtest import *
-
+from datetime import datetime
+from termcolor import colored
 
 
 
@@ -224,20 +225,31 @@ class WalkForwardOptimization:
             start = start.strftime("%m-%d-%y %H:%M")
             end = self.test_samples[0].index[-1]
             end.strftime("%m-%d-%y %H:%M")
-            print(f"Dataset range --> {start} - {end}")
+            print(colored(f"Dataset range --> {start} - {end}", 'green'))
 
         # Run the optimization
         total = len(self.train_samples)
         current = 1
+        now = datetime.now()
+        formatted_now = now.strftime("%Y-%m-%d %H:%M:%S")
+        print(colored(f"Start of optimization {formatted_now}", 'yellow'))
         for self.train_sample, self.test_sample in tqdm(zip(self.train_samples, self.test_samples)):
-            start = self.train_sample.index[0]
-            start = start.strftime("%m-%d-%y %H:%M")
-            end = self.test_sample.index[-1]
-            end = end.strftime("%m-%d-%y %H:%M")
-            print(f"Block {current}/{total} --> {start} - {end}")
+            try:
+                start = self.train_sample.index[0]
+                start = start.strftime("%m-%d-%y %H:%M")
+                end = self.test_sample.index[-1]
+                end = end.strftime("%m-%d-%y %H:%M")
+                print(colored(f"Block {current}/{total} --> {start} - {end}", 'magenta'))
+            except Exception as ex:
+                print("Unable to display time", ex)
             self.get_best_params_train_set()
             self.test_best_params()
             current += 1
+        now = datetime.now()
+        formatted_now = now.strftime("%Y-%m-%d %H:%M:%S")
+        print(colored(f"Start of optimization {formatted_now}", 'yellow'))
+
+
 
     def display(self):
         # Empty dataframe that will be filled by the result on each period
