@@ -1,10 +1,18 @@
 import sys
-sys.path.insert(0, '..')
-from Strategies.LI_2023_02_TreePcaQuantile_Pipeline import *
+import pdb, os
+import warnings
+# Get the current working directory
+current_working_directory = os.getcwd()
+# Construct the path to the quantreo folder
+quantreo_path = os.path.join(current_working_directory, 'quantreo')
+# Add the quantreo folder to the Python path
+sys.path.append(quantreo_path)
+
+from quantreo.Strategies.TreePcaQuantile_Pipeline import *
 from Quantreo.Backtest import *
 from Quantreo.WalkForwardOptimization import *
 
-import warnings
+
 warnings.filterwarnings("ignore")
 
 # SAVE WEIGHTS
@@ -31,6 +39,7 @@ params_fixed = {
     "list_X": ["SMA_diff", "RSI", "ATR", "candle_way", "filling", "amplitude", "SPAN_A", "SPAN_B", "BASE", "STO_RSI",
                "STO_RSI_D", "STO_RSI_K", "previous_ret"],
     "train_mode": True,
+    "lags": 1
 }
 
 # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)

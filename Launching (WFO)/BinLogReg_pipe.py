@@ -9,7 +9,7 @@ quantreo_path = os.path.join(current_working_directory, 'quantreo')
 # Add the quantreo folder to the Python path
 sys.path.append(quantreo_path)
 
-from Strategies.LI_2023_02_BinLogReg_Pipeline import *  # TreePcaQuantile_Pipeline
+from quantreo.Strategies.BinLogReg_Pipeline import *  # TreePcaQuantile_Pipeline
 from Quantreo.Backtest import Backtest
 from Quantreo.WalkForwardOptimization import WalkForwardOptimization
 from Data.create_databases import DataHandler
@@ -32,7 +32,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     TimeCorrection = TimeframeAnalyzer()
     if os.path.exists(file_path):
         df = pd.read_parquet(file_path)
-        df = df.head(200000)
+        # df = df.head(200000)
         if 'high_time' not in df.columns or 'low_time' not in df.columns:
             TimeCorrection.high_low_equities(f'{multiplier}{timespan}')
             df = TimeCorrection.get_data()
