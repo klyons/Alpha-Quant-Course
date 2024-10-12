@@ -9,7 +9,7 @@ quantreo_path = os.path.join(current_working_directory, 'quantreo')
 # Add the quantreo folder to the Python path
 sys.path.append(quantreo_path)
 
-from Strategies.LI_2023_02_TreePcaQuantile_Pipeline import *  # TreePcaQuantile_Pipeline
+from Strategies.TreePcaQuantile_Pipeline import *  # TreePcaQuantile_Pipeline
 from Quantreo.Backtest import Backtest
 from Quantreo.WalkForwardOptimization import WalkForwardOptimization
 from Data.create_databases import DataHandler
@@ -50,12 +50,12 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         df = pd.read_parquet(file_path)
     costs = 0.0001
     params_range = {
-        "tp": [0.003 + i*0.002 for i in range(3)],
-        "sl": [-0.003 - i*0.002 for i in range(3)],
+        "tp": [0.004 + i*0.001 for i in range(3)],
+        "sl": [-0.004 - i*0.001 for i in range(3)],
     }   
 
     params_fixed = {
-        "look_ahead_period": 5,  #this parameter sets the 
+        "look_ahead_period": 5,  #this parameter sets the dependent variable
         "sma_slow": 60,
         "sma_fast": 20,
         "rsi": 21,
@@ -65,10 +65,11 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         "list_X": ["SMA_diff", "RSI", "ATR", "candle_way", "filling", "amplitude", "SPAN_A", "SPAN_B", "BASE", "STO_RSI",
                 "STO_RSI_D", "STO_RSI_K", "previous_ret"],
         "train_mode": True,
+        "lags": 1
     }
 
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
-    WFO = WalkForwardOptimization(df, TreePcaQuantile_Pipeline, params_fixed, params_range,length_train_set=10_000, randomness=1.00)
+    WFO = WalkForwardOptimization(df, TreePcaQuantile_Pipeline, params_fixed, params_range,length_train_set=50_000, randomness=1.00)
     WFO.run_optimization()
 
     # Extract best parameters
@@ -90,7 +91,8 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     WFO.display()
 
 if __name__ == "__main__":
-    symbol = 'SPY'
+    #class specific parameter
+    symbol = 'QQQ'
     instrument = 'Equities'
     # use 'M' for minute 'H' for hour and 'S' for second
     timespan = 'M'

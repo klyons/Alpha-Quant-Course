@@ -1,10 +1,16 @@
-import sys
-sys.path.insert(0, '..')
-from Strategies.LI_2023_02_TreePcaQuantile_Pipeline import *
+import sys, pdb, os
+import warnings
+# Get the current working directory
+current_working_directory = os.getcwd()
+# Construct the path to the quantreo folder
+quantreo_path = os.path.join(current_working_directory, 'quantreo')
+# Add the quantreo folder to the Python path
+sys.path.append(quantreo_path)
+
+from Strategies.TreePcaQuantile_Pipeline import *
 from Quantreo.Backtest import *
 from Quantreo.WalkForwardOptimizationMulti import *
-import pdb
-import warnings
+
 warnings.filterwarnings("ignore")
 
 # SAVE WEIGHTS

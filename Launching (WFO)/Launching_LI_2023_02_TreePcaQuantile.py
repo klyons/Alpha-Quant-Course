@@ -1,6 +1,6 @@
 import sys
 sys.path.insert(0, '..')
-from Strategies.LI_2023_02_TreePcaQuantile_Pipeline import *
+from quantreo.Strategies.TreePcaQuantile_Pipeline import *
 from Quantreo.Backtest import *
 from Quantreo.WalkForwardOptimization import *
 import pdb
