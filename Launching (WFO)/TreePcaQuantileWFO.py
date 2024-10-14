@@ -9,7 +9,7 @@ quantreo_path = os.path.join(current_working_directory, 'quantreo')
 # Add the quantreo folder to the Python path
 sys.path.append(quantreo_path)
 
-from Strategies.TreePcaQuantile_Pipeline import *  # TreePcaQuantile_Pipeline
+from Strategies.TreePcaQuantilePipeline import *  # TreePcaQuantile_Pipeline
 from Quantreo.Backtest import Backtest
 from Quantreo.WalkForwardOptimization import WalkForwardOptimization
 from Data.create_databases import DataHandler
@@ -50,8 +50,8 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         df = pd.read_parquet(file_path)
     costs = 0.0001
     params_range = {
-        "tp": [0.004 + i*0.001 for i in range(3)],
-        "sl": [-0.004 - i*0.001 for i in range(3)],
+        "tp": [0.00075 + i*0.0001 for i in range(4)],
+        "sl": [-0.00075 - i*0.0001 for i in range(4)],
     }   
 
     params_fixed = {
@@ -59,17 +59,17 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         "sma_slow": 60,
         "sma_fast": 20,
         "rsi": 21,
-        "atr": 15,
+        "atr": 10,
         "cost": costs, # 0.0001,
         "leverage": 5,
         "list_X": ["SMA_diff", "RSI", "ATR", "candle_way", "filling", "amplitude", "SPAN_A", "SPAN_B", "BASE", "STO_RSI",
                 "STO_RSI_D", "STO_RSI_K", "previous_ret"],
         "train_mode": True,
-        "lags": 1
+        "lags": 5
     }
 
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
-    WFO = WalkForwardOptimization(df, TreePcaQuantile_Pipeline, params_fixed, params_range,length_train_set=50_000, randomness=1.00)
+    WFO = WalkForwardOptimization(df, TreePcaQuantilePipeline, params_fixed, params_range,length_train_set=60_000, randomness=1.00, anchored=False)
     WFO.run_optimization()
 
     # Extract best parameters
@@ -92,7 +92,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
 
 if __name__ == "__main__":
     #class specific parameter
-    symbol = 'QQQ'
+    symbol = 'SPY'
     instrument = 'Equities'
     # use 'M' for minute 'H' for hour and 'S' for second
     timespan = 'M'

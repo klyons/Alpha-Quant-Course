@@ -129,7 +129,7 @@ class TreePcaQuantilePipelinemulti:
 
         # Define the hyperparameters to search over
         grid = {
-            'pca__n_components': [5, 7, 9], #len(df.columns // 1.2)
+            'pca__n_components': [15, 20, 25], #len(df.columns // 1.2)
             'clf__min_samples_split': [5, 10],
             'clf__max_depth': [5, 6, 7]
         }

@@ -9,7 +9,7 @@ quantreo_path = os.path.join(current_working_directory, 'quantreo')
 # Add the quantreo folder to the Python path
 sys.path.append(quantreo_path)
 
-from quantreo.Strategies.BinLogReg_Pipeline import *  # TreePcaQuantile_Pipeline
+from Strategies.BinLogRegPipeline import *  # TreePcaQuantile_Pipeline
 from Quantreo.Backtest import Backtest
 from Quantreo.WalkForwardOptimization import WalkForwardOptimization
 from Data.create_databases import DataHandler
@@ -52,23 +52,24 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     #these parameters are measured in percents so they can stay as is .005 is 0.5%
     costs = 0.0001
     params_range = {
-        "tp": [0.003 + i*0.002 for i in range(3)],
-        "sl": [-0.003 - i*0.002 for i in range(3)],
+        "tp": [0.00075 + i*0.0001 for i in range(3)],
+        "sl": [-0.00075 - i*0.0001 for i in range(3)],
     }
 
     params_fixed = {
-        "look_ahead_period": 5,
+        "look_ahead_period": 10,
         "sma_fast": 30,
         "sma_slow":80,
         "rsi":14,
         "atr":5,
         "cost": 0.0001,
         "leverage": 5,
-        "list_X": ["SMA_diff", "RSI", "ATR"],
+        "list_X": ["SMA_diff", "RSI", "ATR","candle_way", "filling", "amplitude", "previous_ret"],
         "train_mode": True,
+        "lags": 5,
     }
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
-    WFO = WalkForwardOptimization(df, BinLogReg_Pipeline, params_fixed, params_range,length_train_set=10_000, randomness=1.00)
+    WFO = WalkForwardOptimization(df, BinLogRegPipeline, params_fixed, params_range,length_train_set=10_000, randomness=1.00, anchored=False)
     WFO.run_optimization()
 
     # Extract best parameters

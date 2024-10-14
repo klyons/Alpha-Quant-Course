@@ -3,7 +3,28 @@ import pandas as pd
 import numpy as np
 from arch import arch_model
 from statsmodels.tsa.stattools import adfuller
+from fracdiff.sklearn import Fracdiff, FracdiffStat
 
+def get_fractional_diff(df, col, d=0.5):
+    """
+    Calculates the fractional difference of a given column in a DataFrame.
+    Parameters:
+    - df (pd.DataFrame): Input DataFrame containing the column for which to calculate fractional difference.
+    - col (str): The name of the column in the DataFrame for which to calculate fractional difference.
+    - d (float, optional): The fractional difference parameter. Default is 0.5.
+    Returns:
+    - pd.DataFrame: A new DataFrame with an additional column named 'frac_diff_{d}', where {d} is the provided parameter.
+    """
+    if d == 0:
+        f = FracdiffStat()
+        X = f.fit_transform(df[col])
+        d = f.d_[0]
+
+    df_copy = df.copy()
+    fracdiff = Fracdiff(d=d)
+    df_copy[f"{col}_frac_diff_{d}"] = fracdiff.fit_transform(df_copy[col].values.reshape(-1, 1)).flatten()
+
+    return df_copy
 
 def sma(df, col, n):
     df[f"SMA_{n}"] = ta.trend.SMAIndicator(df[col],int(n)).sma_indicator()
@@ -24,7 +45,103 @@ def rsi(df, col, n):
     df[f"RSI"] = ta.momentum.RSIIndicator(df[col],int(n)).rsi()
     return df
 
-def garch_prediction(df, col):
+def get_volatility(close,span0=20):
+    # simple percentage returns
+    df0=close.pct_change()
+    # 20 days, a month EWM's std as boundary
+    df0=df0.ewm(span=span0).std()
+    df0.dropna(inplace=True)
+    return df0
+
+def get_3_barriers(volatility, prices, plot = False):
+	#create a container
+	#can be used
+	t_final = 10
+	upper_lower_multipliers = [2, 2]
+	barriers = pd.DataFrame(columns=['bars_passed','price', 'vert_barrier','top_barrier', 'bottom_barrier'], index = volatility.index)
+	for bar, vol in volatility.items():
+		bars_passed = len(volatility.loc[volatility.index[0] : bar])
+		#set the vertical barrier 
+		if (bars_passed + t_final < len(volatility.index) and t_final != 0):
+			vert_barrier = volatility.index[bars_passed + t_final]
+		else:
+			vert_barrier = np.nan
+		#set the top barrier
+		if upper_lower_multipliers[0] > 0:
+			top_barrier = prices.loc[bar] + prices.loc[bar] * upper_lower_multipliers[0] * vol
+		else:
+			#set it to NaNs
+			top_barrier = pd.Series(index=prices.index)
+		#set the bottom barrier
+		if upper_lower_multipliers[1] > 0:
+			bottom_barrier = prices.loc[bar] - prices.loc[bar] * upper_lower_multipliers[1] * vol
+		else: 
+			#set it to NaNs
+			bottom_barrier = pd.Series(index=prices.index)
+		barriers.loc[bar, ['bars_passed', 'price', 'vert_barrier','top_barrier', 'bottom_barrier']] = bars_passed, prices.loc[bar], vert_barrier, top_barrier, bottom_barrier
+	if plot == True:
+		plt.plot(barriers.out,'bo')
+		plot.show()
+	return barriers
+
+def get_labels(barriers):
+    labels = []
+    size = []  # percent gained or lost
+
+    for i in range(len(barriers.index)):
+        start = barriers.index[i]
+        end = barriers.vert_barrier[i]
+        if pd.notna(end):
+            # assign the initial and final price
+            price_initial = barriers.price[start]
+            price_final = barriers.price[end]
+            # assign the top and bottom barriers
+            top_barrier = barriers.top_barrier[i]
+            bottom_barrier = barriers.bottom_barrier[i]
+            # set the profit taking and stop loss conditions
+            condition_pt = (barriers.price[start:end] >= top_barrier).any()
+            condition_sl = (barriers.price[start:end] <= bottom_barrier).any()
+            # assign the labels
+            if condition_pt:
+                labels.append(1)
+            else:
+                labels.append(0)
+            size.append((price_final - price_initial) / price_initial)
+        else:
+            labels.append(np.nan)
+            size.append(np.nan)
+
+    # Create a DataFrame with the index and 'Signal' column
+    signals_df = pd.DataFrame({'Signal': labels}, index=barriers.index)
+    return signals_df
+
+def get_barriers_signal(df, span0=20, t_final=10, upper_lower_multipliers=[2, 2], plot=False):
+    """
+    Processes the data by calculating volatility, barriers, and labels.
+    Parameters:
+    - df (pd.DataFrame): Input DataFrame containing 'close' prices.
+    - span0 (int, optional): Span for the EWM volatility calculation. Default is 20.
+    - t_final (int, optional): Time period for the vertical barrier. Default is 10.
+    - upper_lower_multipliers (list, optional): Multipliers for the upper and lower barriers. Default is [2, 2].
+    - plot (bool, optional): Whether to plot the barriers. Default is False.
+    Returns:
+    - pd.DataFrame: DataFrame with calculated barriers and labels.
+    """
+    # Calculate volatility
+    volatility = get_volatility(df['close'], span0=span0)
+    
+    # Calculate barriers
+    barriers = get_3_barriers(volatility, df['close'], plot=plot)
+    
+    # Calculate labels
+    labels = get_labels(barriers)
+    
+    # Merge barriers and labels into the original DataFrame
+    # df = df.join(barriers, how='left')
+    df = df.join(labels, how='left')
+    return df
+
+def garch_prediction(df, col, window = 10):
     df = df.copy()
     # Fit a GARCH(1, 1) model to the 'col' time series
     model = arch_model(df[col], vol='Garch', p=1, q=1)
@@ -33,6 +150,9 @@ def garch_prediction(df, col):
     prediction = model_fit.forecast(start=0)
     df['GARCH'] = prediction.variance
     return df
+
+
+
 
 def atr(df, n):
     df = df.copy()

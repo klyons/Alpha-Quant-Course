@@ -26,7 +26,7 @@ import sys, pdb
 sys.path.insert(0, '..')
 from Quantreo.DataPreprocessing import *
 
-class BinLogReg_Pipeline():
+class BinLogRegPipeline():
 
     def __init__(self, data, parameters):
         # Set parameters
@@ -38,6 +38,10 @@ class BinLogReg_Pipeline():
         self.rsi_period, self.atr_period = parameters["rsi"], parameters["atr"]
         self.look_ahead_period = parameters["look_ahead_period"]
         self.lags = parameters["lags"]
+        self.multiply_data = False
+        if parameters.get("multiply_data"):
+            self.multiply_data = parameters["multiply_data"]
+        self.columns_added = False
 
         self.model, self.saved_model_path = None, None
 
@@ -69,15 +73,24 @@ class BinLogReg_Pipeline():
     def get_features(self, data_sample):
         data_sample = sma_diff(data_sample, "close", self.sma_fast, self.sma_slow)
         data_sample = rsi(data_sample, "close", self.rsi_period)
+        data_sample = candle_information(data_sample)
+        data_sample = previous_ret(data_sample, "close", 1)
 
         data_sample = atr(data_sample,self.atr_period)
-        
-        # add lags
+        new_columns = []
         for col in self.list_X:
-            for lag in range(1,self.lags + 1):
-                data_sample[col + "_lag_" + str(lag)] = data_sample[col].shift(lag)
-
-        data_sample = data_sample.fillna(value=0)
+            for lag in range(1, self.lags + 1):
+                lagged_col_name = f"{col}_l{lag}"
+                if not self.columns_added:
+                    data_sample[lagged_col_name] = data_sample[col].shift(lag)
+                    new_columns.append(lagged_col_name)
+                else:
+                    data_sample[lagged_col_name] = data_sample[col].shift(lag)
+        if not self.columns_added:
+            self.list_X = self.list_X + new_columns
+            self.columns_added = True  # Set the flag to True after adding 
+        # If there are still NaN values, replace with 0
+        data_sample = data_sample.fillna(0)
         return data_sample
 
     def train_model(self):
@@ -86,9 +99,10 @@ class BinLogReg_Pipeline():
 
         # features to reply in the get_features function
         self.data_train = self.get_features(self.data_train)
-
         # Create lists with the columns name of the features used and the target
-        self.data_train = binary_signal(self.data_train, self.look_ahead_period)
+        #self.data_train = binary_signal(self.data_train, self.look_ahead_period)
+        self.data_train = get_barriers_signal(self.data_train)
+        self.data_train = self.data_train.dropna()
         list_y = ["Signal"]
 
         # Split our dataset in a train and a test set
@@ -96,7 +110,7 @@ class BinLogReg_Pipeline():
         X_train, X_test, y_train, y_test = data_split(self.data_train, split, self.list_X, list_y)
 
         #change cross validation to work with time series
-        tscv = TimeSeriesSplit(n_splits=3)
+        tscv = TimeSeriesSplit(n_splits=2)
 
         # Create the model
         pipe = Pipeline([

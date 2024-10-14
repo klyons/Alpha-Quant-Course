@@ -50,7 +50,7 @@ class WalkForwardOptimization:
     """
 
     def __init__(self, data, TradingStrategy, fixed_parameters, parameters_range, length_train_set=10_000,
-                 pct_train_set=.80, anchored=True, title=None, randomness=0.75):
+                 pct_train_set=.80, anchored=False, title=None, randomness=0.75):
         # Set initial parameters
         self.data = data
         self.TradingStrategy = TradingStrategy

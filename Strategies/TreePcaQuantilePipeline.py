@@ -31,7 +31,7 @@ from Quantreo.DataPreprocessing import *
 
 import numpy as np
 
-class TreePcaQuantile_Pipeline():
+class TreePcaQuantilePipeline():
 
     def __init__(self, data, parameters, data2 = None):
         # Set parameters
@@ -43,6 +43,7 @@ class TreePcaQuantile_Pipeline():
         self.rsi_period, self.atr_period = parameters["rsi"], parameters["atr"]
         self.look_ahead_period = parameters["look_ahead_period"]
         self.lags = parameters["lags"]
+        self.columns_added = False
 
         self.model, self.sc, self.pca = None, None, None
         self.saved_model_path, self.saved_sc_path = None, None
@@ -76,25 +77,26 @@ class TreePcaQuantile_Pipeline():
     def get_features(self, data_sample):
         data_sample = sma_diff(data_sample, "close", self.sma_fast, self.sma_slow)
         data_sample = rsi(data_sample, "close", self.rsi_period)
-        data_sample = previous_ret(data_sample, "close", 60)
-        data_sample = sto_rsi(data_sample, "close", 14)
-        data_sample = ichimoku(data_sample, 27, 78)
-        data_sample = candle_information(data_sample)
         data_sample = atr(data_sample,self.atr_period)
+        data_sample = candle_information(data_sample)
+        data_sample = ichimoku(data_sample, 27, 78)
+        data_sample = sto_rsi(data_sample, "close", 14)
+        data_sample = previous_ret(data_sample, "close", 1)
         # Replace infinity with NaN
-        
+        new_columns = []
         for col in self.list_X:
-            for lag in range(1,self.lags + 1):
-                data_sample[col + "_lag_" + str(lag)] = data_sample[col].shift(lag)
-        # Forward fill NaN values
-        data_sample = data_sample.fillna(method='ffill')
-        
-        # Backward fill any remaining NaN values
-        data_sample = data_sample.fillna(method='bfill')
-        
+            for lag in range(1, self.lags + 1):
+                lagged_col_name = f"{col}_l{lag}"
+                if not self.columns_added:
+                    data_sample[lagged_col_name] = data_sample[col].shift(lag)
+                    new_columns.append(lagged_col_name)
+                else:
+                    data_sample[lagged_col_name] = data_sample[col].shift(lag)
+        if not self.columns_added:
+            self.list_X = self.list_X + new_columns
+            self.columns_added = True  # Set the flag to True after adding 
         # If there are still NaN values, replace with 0
         data_sample = data_sample.fillna(0)
-        
         return data_sample
 
     def train_model(self):
@@ -125,13 +127,13 @@ class TreePcaQuantile_Pipeline():
         # Create the model
         pipe = Pipeline([
             ('sc', StandardScaler()),
-            ('pca', PCA(n_components=5)),
+            ('pca', PCA(n_components=10)),
             ('clf', DecisionTreeClassifier())
         ])
 
         # Define the hyperparameters to search over
         grid = {
-            'pca__n_components': [5, 7, 9], #len(df.columns // 1.2)
+            'pca__n_components': [10, 15, 20], #len(df.columns // 1.2)
             'clf__min_samples_split': [5, 10],
             'clf__max_depth': [5, 6, 7]
         }

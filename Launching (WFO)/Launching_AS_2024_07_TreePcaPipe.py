@@ -1,6 +1,6 @@
 import sys
 sys.path.insert(0, '..')
-from Strategies.AS_2024_07_TreePcaPipe import *
+from quantreo.Strategies.TreePcaPipe import *
 from Quantreo.Backtest import *
 from Quantreo.WalkForwardOptimization import *
 
@@ -30,11 +30,12 @@ params_fixed = {
     "list_X": ["SMA_diff", "RSI", "ATR", "candle_way", "filling", "amplitude", "SPAN_A", "SPAN_B", "BASE", 
                "STO_RSI", "STO_RSI_D", "STO_RSI_K", "previous_ret"],
     "train_mode": True,
+    "lags": 1
 }
 
 # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
 
-WFO = WalkForwardOptimization(df, TreePcaPipe, params_fixed, params_range, length_train_set=5_000, randomness=1.00)
+WFO = WalkForwardOptimization(df, TreePcaPipe, params_fixed, params_range, length_train_set=20_000, randomness=1.00)
 WFO.run_optimization()
 
 # Extract best parameters
