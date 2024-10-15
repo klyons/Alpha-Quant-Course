@@ -102,13 +102,16 @@ class BinLogRegPipeline():
         # Create lists with the columns name of the features used and the target
         #self.data_train = binary_signal(self.data_train, self.look_ahead_period)
         self.data_train = get_barriers_signal(self.data_train)
+        pdb.set_trace()
         self.data_train = self.data_train.dropna()
+        # figure out what is going on with the dataframe
+        # make sure all the features get returned out of 
         list_y = ["Signal"]
 
         # Split our dataset in a train and a test set
         split = int(len(self.data_train) * full_split)
         X_train, X_test, y_train, y_test = data_split(self.data_train, split, self.list_X, list_y)
-
+        
         #change cross validation to work with time series
         tscv = TimeSeriesSplit(n_splits=2)
 

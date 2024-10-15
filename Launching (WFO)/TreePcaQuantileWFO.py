@@ -48,16 +48,16 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
             DataObj.get_currency(symbol = symbol, timeframe=mt5.TIMEFRAME_M5) # mt5.TIMEFRAME_H1 ect
             TimeCorrection.high_low_currencies(f'{multiplier}{timespan}')
         df = pd.read_parquet(file_path)
-    costs = 0.0001
+    costs = 0.00002
     params_range = {
         "tp": [0.00075 + i*0.0001 for i in range(4)],
         "sl": [-0.00075 - i*0.0001 for i in range(4)],
     }   
 
     params_fixed = {
-        "look_ahead_period": 5,  #this parameter sets the dependent variable
-        "sma_slow": 60,
-        "sma_fast": 20,
+        "look_ahead_period": 6,  #this parameter sets the dependent variable
+        "sma_slow": 30,
+        "sma_fast": 10,
         "rsi": 21,
         "atr": 10,
         "cost": costs, # 0.0001,

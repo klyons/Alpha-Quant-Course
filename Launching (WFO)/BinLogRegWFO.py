@@ -19,7 +19,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # SAVE WEIGHTS
-def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000):
+def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_params = None,train_length=200_000):
     save = False
     name = f"TreePcaQuantile_{symbol}_{multiplier}{timespan}"
     
