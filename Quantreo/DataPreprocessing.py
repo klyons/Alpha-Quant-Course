@@ -127,6 +127,7 @@ def get_barriers_signal(df, span0=20, t_final=10, upper_lower_multipliers=[2, 2]
     Returns:
     - pd.DataFrame: DataFrame with calculated barriers and labels.
     """
+    pdb.set_trace()
     # Calculate volatility
     volatility = get_volatility(df['close'], span0=span0)
     
