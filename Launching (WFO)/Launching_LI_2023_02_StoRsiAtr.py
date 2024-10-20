@@ -1,7 +1,7 @@
 
 import sys
 sys.path.insert(0, '..')
-from Strategies.LI_2023_02_StoRsiAtr import *
+from quantreo.Strategies.StoRsiAtr import *
 from Quantreo.WalkForwardOptimization import *
 import warnings
 warnings.filterwarnings("ignore")

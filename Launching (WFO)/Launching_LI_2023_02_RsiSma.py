@@ -4,7 +4,7 @@ warnings.filterwarnings("ignore")
 
 import sys
 sys.path.insert(0, '..')
-from Strategies.LI_2023_02_RsiSma import *
+from quantreo.Strategies.RsiSma import *
 from Quantreo.WalkForwardOptimization import *
 
 df = pd.read_csv("../Data/FixTimeBars/AUDUSD_4H_Admiral_READY.csv", index_col="time", parse_dates=True)

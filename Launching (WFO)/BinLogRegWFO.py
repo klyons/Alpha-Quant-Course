@@ -48,28 +48,27 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
             DataObj.get_currency(symbol = symbol, timeframe=mt5.TIMEFRAME_M5) # mt5.TIMEFRAME_H1 ect
             TimeCorrection.high_low_currencies(f'{multiplier}{timespan}')
         df = pd.read_parquet(file_path)
-    
     #these parameters are measured in percents so they can stay as is .005 is 0.5%
-    costs = 0.0001
-    params_range = {
-        "tp": [0.00075 + i*0.0001 for i in range(3)],
-        "sl": [-0.00075 - i*0.0001 for i in range(3)],
-    }
 
+    params_range = {
+        "tp": [0.0005 + i*0.0001 for i in range(5)],
+        "sl": [-0.0005 - i*0.0001 for i in range(5)],
+    }
+  
     params_fixed = {
         "look_ahead_period": 10,
         "sma_fast": 30,
         "sma_slow":80,
         "rsi":14,
         "atr":5,
-        "cost": 0.0001,
+        "cost": 0.00001,
         "leverage": 5,
         "list_X": ["SMA_diff", "RSI", "ATR","candle_way", "filling", "amplitude", "previous_ret"],
         "train_mode": True,
         "lags": 5,
     }
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
-    WFO = WalkForwardOptimization(df, BinLogRegPipeline, params_fixed, params_range,length_train_set=10_000, randomness=1.00, anchored=False)
+    WFO = WalkForwardOptimization(df, BinLogRegPipeline, params_fixed, params_range,length_train_set=100_000, randomness=1.00, anchored=False)
     WFO.run_optimization()
 
     # Extract best parameters

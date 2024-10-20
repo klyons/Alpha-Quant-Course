@@ -20,6 +20,7 @@ from sklearn.metrics import classification_report
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from joblib import dump, load
+from imblearn.over_sampling import SMOTE
 
 #for importing the quantreo library
 import sys, pdb
@@ -100,9 +101,9 @@ class BinLogRegPipeline():
         # features to reply in the get_features function
         self.data_train = self.get_features(self.data_train)
         # Create lists with the columns name of the features used and the target
+
         #self.data_train = binary_signal(self.data_train, self.look_ahead_period)
         self.data_train = get_barriers_signal(self.data_train)
-        pdb.set_trace()
         self.data_train = self.data_train.dropna()
         # figure out what is going on with the dataframe
         # make sure all the features get returned out of 
@@ -111,7 +112,9 @@ class BinLogRegPipeline():
         # Split our dataset in a train and a test set
         split = int(len(self.data_train) * full_split)
         X_train, X_test, y_train, y_test = data_split(self.data_train, split, self.list_X, list_y)
-        
+        #upsample the negative class
+        smote = SMOTE()
+        X_train, y_train = smote.fit_resample(X_train, y_train)
         #change cross validation to work with time series
         tscv = TimeSeriesSplit(n_splits=2)
 
@@ -164,7 +167,7 @@ class BinLogRegPipeline():
         entry_signal = 0
         if self.data.loc[:time]["ml_signal"][-2] == 1:
             entry_signal = 1
-        elif self.data.loc[:time]["ml_signal"][-2] == -1:
+        elif self.data.loc[:time]["ml_signal"][-2] == 0:
             entry_signal = -1
 
         # Enter in buy position only if we want to, and we aren't already

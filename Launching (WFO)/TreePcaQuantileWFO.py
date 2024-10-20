@@ -48,7 +48,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
             DataObj.get_currency(symbol = symbol, timeframe=mt5.TIMEFRAME_M5) # mt5.TIMEFRAME_H1 ect
             TimeCorrection.high_low_currencies(f'{multiplier}{timespan}')
         df = pd.read_parquet(file_path)
-    costs = 0.00002
+
     params_range = {
         "tp": [0.00075 + i*0.0001 for i in range(4)],
         "sl": [-0.00075 - i*0.0001 for i in range(4)],
@@ -60,7 +60,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         "sma_fast": 10,
         "rsi": 21,
         "atr": 10,
-        "cost": costs, # 0.0001,
+        "cost": 0.00002, 
         "leverage": 5,
         "list_X": ["SMA_diff", "RSI", "ATR", "candle_way", "filling", "amplitude", "SPAN_A", "SPAN_B", "BASE", "STO_RSI",
                 "STO_RSI_D", "STO_RSI_K", "previous_ret"],
@@ -92,7 +92,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
 
 if __name__ == "__main__":
     #class specific parameter
-    symbol = 'SPY'
+    symbol = 'QQQ'
     instrument = 'Equities'
     # use 'M' for minute 'H' for hour and 'S' for second
     timespan = 'M'

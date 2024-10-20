@@ -1,8 +1,8 @@
 import sys
 sys.path.insert(0, '..')
-from Strategies.LI_2023_02_RsiSma import *
+from quantreo.Strategies.RsiSma import *
 from Quantreo.CombinatorialPurgedCV import *
-from Strategies.LI_2023_02_RsiSmaAtr import *
+from quantreo.Strategies.RsiSmaAtr import *
 from Quantreo.CombinatorialPurgedCV import *
 
 

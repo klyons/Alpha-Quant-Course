@@ -31,6 +31,8 @@ from Quantreo.DataPreprocessing import *
 
 import numpy as np
 
+# This Python class implements a pipeline for training a machine learning model using decision trees
+# and applying it to make predictions on financial data for trading signals and position management.
 class TreePcaQuantilePipeline():
 
     def __init__(self, data, parameters, data2 = None):
@@ -74,6 +76,24 @@ class TreePcaQuantilePipeline():
         self.var_buy_high, self.var_sell_high = None, None
         self.var_buy_low, self.var_sell_low = None, None
 
+    def add_multiplier_features(self, data_sample):
+        for i, col1 in enumerate(self.list_X):
+            for col2 in self.list_X[i+1:]:
+                multiplier_col_name = f"{col1}_x_{col2}"
+                data_sample[multiplier_col_name] = data_sample[col1] * data_sample[col2]
+                self.list_X.append(multiplier_col_name)
+        return data_sample
+
+    def add_lag_features(self, data_sample):
+        new_columns = []
+        for col in self.list_X:
+            for lag in range(1, self.lags + 1):
+                lagged_col_name = f"{col}_l{lag}"
+                data_sample[lagged_col_name] = data_sample[col].shift(lag)
+                new_columns.append(lagged_col_name)
+        self.list_X.extend(new_columns)
+        return data_sample
+
     def get_features(self, data_sample):
         data_sample = sma_diff(data_sample, "close", self.sma_fast, self.sma_slow)
         data_sample = rsi(data_sample, "close", self.rsi_period)
@@ -82,6 +102,14 @@ class TreePcaQuantilePipeline():
         data_sample = ichimoku(data_sample, 27, 78)
         data_sample = sto_rsi(data_sample, "close", 14)
         data_sample = previous_ret(data_sample, "close", 1)
+        
+        # add multiplier features
+        multiplier_columns = []
+        for i, col1 in enumerate(self.list_X):
+            for col2 in self.list_X[i+1:]:
+                multiplier_col_name = f"{col1}_x_{col2}"
+                data_sample[multiplier_col_name] = data_sample[col1] * data_sample[col2]
+                multiplier_columns.append(multiplier_col_name)
         # Replace infinity with NaN
         new_columns = []
         for col in self.list_X:
@@ -96,6 +124,8 @@ class TreePcaQuantilePipeline():
             self.list_X = self.list_X + new_columns
             self.columns_added = True  # Set the flag to True after adding 
         # If there are still NaN values, replace with 0
+        # add the latest multiplier features
+        
         data_sample = data_sample.fillna(0)
         return data_sample
 
@@ -135,7 +165,7 @@ class TreePcaQuantilePipeline():
         grid = {
             'pca__n_components': [10, 15, 20], #len(df.columns // 1.2)
             'clf__min_samples_split': [5, 10],
-            'clf__max_depth': [5, 6, 7]
+            'clf__max_depth': [4, 6, 8]
         }
 
         # Use TimeSeriesSplit with GridSearchCV
@@ -175,11 +205,12 @@ class TreePcaQuantilePipeline():
         if len(self.data.loc[:time]["ml_signal"]) < 2:
             return 0, self.entry_time
 
-        # Create entry signal --> -1,0,1
+        # Create entry signal --> 
+        
         entry_signal = 0
         if self.data.loc[:time]["ml_signal"][-2] == 1:
             entry_signal = 1
-        elif self.data.loc[:time]["ml_signal"][-2] == -1:
+        elif self.data.loc[:time]["ml_signal"][-2] == 0:
             entry_signal = -1
 
         # Enter in buy position only if we want to, and we aren't already

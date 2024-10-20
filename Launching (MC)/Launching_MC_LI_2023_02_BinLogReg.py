@@ -5,7 +5,7 @@ import sys
 sys.path.append('C:/ws/ALPHA-QUANT-COURSE/') 
 
 from Quantreo.MonteCarlo import *
-from Strategies.LI_2023_02_BinLogReg import *
+from quantreo.Strategies.BinLogReg import *
 import warnings
 warnings.filterwarnings("ignore")
 
