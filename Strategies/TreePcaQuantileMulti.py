@@ -33,13 +33,13 @@ quantreo_path = os.path.join(current_working_directory, 'quantreo')
 sys.path.append(quantreo_path)
 
 from Quantreo.DataPreprocessing import *
-from Strategies.Strategy import Strategy
+from Strategies.Strategy import *
 #for importing the quantreo library
 
 
-class TreePcaQuantileMulti():  #try this without inheriting from Strategy first
+class TreePcaQuantileMulti(Strategy):  #try this without inheriting from Strategy first
     def __init__(self, data, parameters, **kwargs):
-        #super().__init__(data, parameters, *kwargs)
+        super().__init__(data, parameters, **kwargs)
         # Set parameters
         self.list_X = parameters["list_X"]
         self.tp, self.sl = parameters["tp"], parameters["sl"]
@@ -166,7 +166,6 @@ class TreePcaQuantileMulti():  #try this without inheriting from Strategy first
         
         self.data = pd.concat([self.data] + self.additional_data, axis=1)
         
-        pdb.set_trace()
         X = self.data[self.list_X]
         #X_sc = self.sc.transform(X)
         #X_pca = self.pca.transform(X_sc)
