@@ -1,7 +1,7 @@
 from tqdm import tqdm
 from datetime import datetime
 from termcolor import colored
-from Quantreo.Backtest import *
+from Quantreo.Backtest import Backtest
 import pdb
 import itertools
 import pandas as pd
@@ -22,7 +22,9 @@ class WalkForwardOptimizationMulti:
 
         # Necessary variables to create our sub-samples
         self.length_train_set, self.pct_train_set = length_train_set, pct_train_set
-        self.train_samples, self.test_samples, self.anchored = [], [], anchored
+        self.train_samples, self.test_samples = [], []
+        self.add_train_samples, self.add_test_samples = [], []
+        self.anchored = anchored
 
         # Necessary variables to compute and store our criteria
         self.BT, self.criterion = None, None
@@ -56,6 +58,9 @@ class WalkForwardOptimizationMulti:
         start = 0
         end = self.length_train_set
 
+        # Align the indices of the additional dataframes with the main data
+        aligned_additional_data = {key: df.reindex(self.main_data.index) for key, df in self.additional_data.items()}
+
         # We split the data until we can't make more than 2 sub-samples
         while (len(self.main_data) - end) > 2 * length_test:
             end += length_test
@@ -71,13 +76,15 @@ class WalkForwardOptimizationMulti:
                 train_slice = self.main_data.iloc[start:end - length_test, :]
                 test_slice = self.main_data.iloc[end - length_test:, :] if is_last_sample else self.main_data.iloc[end - length_test:end, :]
 
-            # Slice additional dataframes in additional_data
-            train_additional = {key: df.iloc[:end - length_test, :] for key, df in self.additional_data.items()}
-            test_additional = {key: df.iloc[end - length_test:, :] if is_last_sample else df.iloc[end - length_test:end, :] for key, df in self.additional_data.items()}
+            # Slice additional dataframes in aligned_additional_data
+            train_additional = {key: df.iloc[:end - length_test, :] for key, df in aligned_additional_data.items()}
+            test_additional = {key: df.iloc[end - length_test:, :] if is_last_sample else df.iloc[end - length_test:end, :] for key, df in aligned_additional_data.items()}
 
             # Append the slices to the samples
-            self.train_samples.append((train_slice, train_additional))
-            self.test_samples.append((test_slice, test_additional))
+            self.train_samples.append(train_slice)
+            self.test_samples.append(test_slice)
+            self.add_train_samples.append(train_additional)
+            self.add_test_samples.append(test_additional)
 
             # Break if it's the last sample
             if is_last_sample:
@@ -85,7 +92,7 @@ class WalkForwardOptimizationMulti:
 
             start += length_test
 
-    def get_criterion(self, sample, params, **additional_data):
+    def get_criterion(self, sample, params, additional_data):
         # Backtest initialization with a specific dataset and set of parameters
         self.BT = Backtest(data=sample, TradingStrategy=self.TradingStrategy, parameters=params, **additional_data)
 
@@ -104,8 +111,11 @@ class WalkForwardOptimizationMulti:
         for self.params_item in np.random.choice(self.dictionaries, size=int(len(self.dictionaries) * self.randomness), replace=False):
             current_params = [self.params_item[key] for key in list(self.parameters_range.keys())]
 
+            # Convert the list of additional data back into a dictionary mapping
+            additional_data = self.add_train_samples[self.train_samples.index(self.train_sample)]
+
             # Pass train_additional as additional_data to get_criterion
-            self.get_criterion(self.train_sample[0], self.params_item, **self.train_sample[1])
+            self.get_criterion(self.train_sample, self.params_item, additional_data)
             current_params.append(self.criterion)
 
             storage_values_params.append(current_params)
@@ -113,7 +123,7 @@ class WalkForwardOptimizationMulti:
         df_find_params = pd.DataFrame(storage_values_params, columns=self.columns)
 
         self.best_params_sample_df = df_find_params.sort_values(by="criterion", ascending=False).iloc[0:1, :]
-        self.best_params_sample_df.index = self.train_sample[0].index[-2:-1]
+        self.best_params_sample_df.index = self.train_sample.index[-2:-1]
 
         self.df_results = pd.concat((self.df_results, self.best_params_sample_df), axis=0)
 
@@ -121,12 +131,14 @@ class WalkForwardOptimizationMulti:
         self.best_params_sample.update(self.fixed_parameters)
 
     def process_samples(self):
-        for train_sample, train_additional in self.train_samples:
-            self.train_sample = (train_sample, train_additional)
+        for train_sample, add_train_sample in zip(self.train_samples, self.add_train_samples):
+            self.train_sample = train_sample
+            self.add_train_sample = add_train_sample
             self.get_best_params_train_set()
 
-        for test_sample, test_additional in self.test_samples:
-            self.test_sample = (test_sample, test_additional)
+        for test_sample, add_test_sample in zip(self.test_samples, self.add_test_samples):
+            self.test_sample = test_sample
+            self.add_test_sample = add_test_sample
             # You can call a similar method for testing if needed
 
     def get_smoother_result(self):
@@ -140,7 +152,9 @@ class WalkForwardOptimizationMulti:
 
         test_params = dict(self.smooth_result.iloc[-1,:-1])
 
-        Strategy = self.TradingStrategy(self.train_sample[0], self.best_params_sample, *self.train_sample[1], self.additional_data)
+        add_data = self.add_train_samples[self.train_samples.index(self.train_sample)]
+
+        Strategy = self.TradingStrategy(self.train_sample, self.best_params_sample, **add_data)
 
         output_params = Strategy.output_dictionary
 
@@ -151,15 +165,56 @@ class WalkForwardOptimizationMulti:
 
     def test_best_params(self):
         smooth_best_params = self.get_smoother_result()
-
-        self.get_criterion(self.test_sample[0], smooth_best_params, **self.test_sample[1])
+        pdb.set_trace()
+        add_data = self.add_test_samples[self.test_samples.index(self.test_sample)]
+        self.get_criterion(self.test_sample, smooth_best_params, add_data)
 
         self.df_results.at[self.df_results.index[-1], 'criterion'] = self.criterion
         self.best_params_smoothed.append(smooth_best_params)
 
     def run_optimization(self):
         self.get_sub_samples()
-        self.process_samples()
+
+        # The data is a list of pandas dataframes. So grab the starting date
+        # from the first element in list and then the ending date
+        # from the last element in the test_samples dataframe
+        if len(self.train_samples) > 0 and len(self.test_samples) > 0:
+            start = self.train_samples[0].index[0]
+            start = start.strftime("%m-%d-%y %H:%M")
+            end = self.test_samples[0].index[-1]
+            end.strftime("%m-%d-%y %H:%M")
+            print(colored(f"Dataset range --> {start} - {end}", 'green'))
+
+        # Run the optimization
+        total = len(self.train_samples)
+        current = 1
+        now = datetime.now()
+        formatted_now = now.strftime("%Y-%m-%d %H:%M:%S")
+        print(colored(f"Start of optimization {formatted_now}", 'yellow'))
+        
+        for i, (train_sample, test_sample) in enumerate(tqdm(zip(self.train_samples, self.test_samples))):
+            try:
+                start = train_sample.index[0]
+                start = start.strftime("%m-%d-%y %H:%M")
+                end = test_sample.index[-1]
+                end = end.strftime("%m-%d-%y %H:%M")
+                print(colored(f"Block {current}/{total} --> {start} - {end}", 'magenta'))
+            except Exception as ex:
+                print("Unable to display time", ex)
+            
+            # Update add_train_sample and add_test_sample using the index i
+            self.train_sample = train_sample
+            self.test_sample = test_sample
+            self.add_train_sample = self.add_train_samples[i]
+            self.add_test_sample = self.add_test_samples[i]
+            
+            self.get_best_params_train_set()
+            self.test_best_params()
+            current += 1
+        
+        now = datetime.now()
+        formatted_now = now.strftime("%Y-%m-%d %H:%M:%S")
+        print(colored(f"End of optimization {formatted_now}", 'yellow'))
 
     def display(self):
         # Empty dataframe that will be filled by the result on each period
@@ -168,11 +223,11 @@ class WalkForwardOptimizationMulti:
         for params, test in zip(self.best_params_smoothed, self.test_samples):
             # !! Here, we can call directly the model without run again the model because the optimal weights are
             # computed already and stored into the output dictionary and so in the self.best_params_smoothed list
-            self.BT = Backtest(data=test, TradingStrategy=self.TradingStrategy, parameters=params, kwargs=self.additional_data)
+            self.BT = Backtest(data=test, TradingStrategy=self.TradingStrategy, parameters=params, **self.add_test_sample)
             self.BT.run()
             df_test_result = pd.concat((df_test_result, self.BT.data), axis=0)
 
         # Print the backtest for the period following the walk-forward method
-        self.BT = Backtest(data=df_test_result, TradingStrategy=self.TradingStrategy, parameters=params, kwargs=self.additional_data)
+        self.BT = Backtest(data=df_test_result, TradingStrategy=self.TradingStrategy, parameters=params, **self.add_test_sample)
         self.BT.run()
         self.BT.plot()

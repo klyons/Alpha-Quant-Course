@@ -37,7 +37,6 @@ class Backtest:
     def __init__(self, data, TradingStrategy, parameters, run_directly=False, title=None, **kwargs):
         # Set parameters
         self.kwargs = kwargs
-        pdb.set_trace()
         self.TradingStrategy = TradingStrategy(data, parameters, **self.kwargs)
         self.start_date_backtest = self.TradingStrategy.start_date_backtest
         self.data = data.loc[self.start_date_backtest:]

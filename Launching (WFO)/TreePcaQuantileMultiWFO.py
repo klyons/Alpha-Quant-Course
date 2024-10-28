@@ -20,6 +20,20 @@ from Data.HighLowTime import TimeframeAnalyzer
 import warnings
 warnings.filterwarnings("ignore")
 
+def truncate_to_common_index(self, df, **kwargs):
+    # Start with the index of the main dataframe
+    common_index = df.index
+    
+    # Find the common index with each additional dataframe
+    for key, additional_df in kwargs.items():
+        common_index = common_index.intersection(additional_df.index)
+    
+    # Truncate the main dataframe to the common index
+    df_truncated = df.loc[common_index]
+    
+    return df_truncated
+
+
 def load_and_process_data(instrument, symbol, multiplier, timespan):
     cwd = os.getcwd()
     relative_path = f"quantreo/Data/{instrument}/{multiplier}{timespan}/{symbol}_{multiplier}{timespan}.parquet"
@@ -55,6 +69,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     
     #this is the dependent variable
     df = load_and_process_data(instrument=instrument, symbol=symbol, multiplier= multiplier, timespan=timespan)
+    df = df.tail(50_000)
     #then we load a variety of independent variables
     #df_aapl = load_and_process_data(instrument=instrument, symbol='AAPL', multiplier= multiplier, timespan=timespan)
     #df_ief = load_and_process_data(instrument=instrument, symbol='IEF', multiplier= multiplier, timespan=timespan)
@@ -62,8 +77,8 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     df_iei = load_and_process_data(instrument=instrument, symbol='IEI', multiplier= multiplier, timespan=timespan)
     #df_shy = load_and_process_data(instrument=instrument, symbol='SHY', multiplier= multiplier, timespan=timespan)
     #df_tlt = load_and_process_data(instrument=instrument, symbol='TLT', multiplier= multiplier, timespan=timespan)
-    
-    
+    df = truncate_to_common_index(df, df_iei)
+    df_iei = truncate_to_common_index(df_iei, df)
     params_range = {
         "tp": [0.00075 + i*0.0001 for i in range(4)],
         "sl": [-0.00075 - i*0.0001 for i in range(4)],
@@ -84,7 +99,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     }
 
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
-    WFO = WalkForwardOptimizationMulti(df, TreePcaQuantileMulti, params_fixed, params_range, length_train_set=60_000, randomness=1.00, anchored=False, iei=df_iei)
+    WFO = WalkForwardOptimizationMulti(df, TreePcaQuantileMulti, params_fixed, params_range, length_train_set=10_000, randomness=1.00, anchored=False, iei=df_iei)
     WFO.run_optimization()
 
     # Extract best parameters

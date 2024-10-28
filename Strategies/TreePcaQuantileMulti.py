@@ -39,7 +39,7 @@ from Strategies.Strategy import *
 
 class TreePcaQuantileMulti(Strategy):  #try this without inheriting from Strategy first
     def __init__(self, data, parameters, **kwargs):
-        super().__init__(data, parameters, **kwargs)
+        #super().__init__(data, parameters, **kwargs)
         # Set parameters
         self.list_X = parameters["list_X"]
         self.tp, self.sl = parameters["tp"], parameters["sl"]
@@ -50,6 +50,8 @@ class TreePcaQuantileMulti(Strategy):  #try this without inheriting from Strateg
         self.look_ahead_period = parameters["look_ahead_period"]
         self.lags = parameters["lags"]
         self.dataframes = kwargs
+        # Assuming self.list_X and kwargs are already defined
+        self.columns_to_keep = self.list_X + [f"{key}_{item}" for key in kwargs.keys() for item in self.list_X]
 
         self.model, self.sc, self.pca = None, None, None
         self.saved_model_path, self.saved_sc_path = None, None
@@ -81,7 +83,25 @@ class TreePcaQuantileMulti(Strategy):  #try this without inheriting from Strateg
         self.var_buy_low, self.var_sell_low = None, None
 
         # Process additional DataFrames
-        
+
+    def add_multiplier_features(self, data_sample):
+        for i, col1 in enumerate(self.list_X):
+            for col2 in self.list_X[i+1:]:
+                multiplier_col_name = f"{col1}_x_{col2}"
+                data_sample[multiplier_col_name] = data_sample[col1] * data_sample[col2]
+                self.list_X.append(multiplier_col_name)
+        return data_sample
+
+    def add_lag_features(self, data_sample):
+        new_columns = []
+        for col in self.list_X:
+            for lag in range(1, self.lags + 1):
+                lagged_col_name = f"{col}_l{lag}"
+                data_sample[lagged_col_name] = data_sample[col].shift(lag)
+                new_columns.append(lagged_col_name)
+        self.list_X.extend(new_columns)
+        return data_sample
+            
 
     def get_features(self, data_sample, symbol=None):
         data_sample = sma_diff(data_sample, "close", self.sma_fast, self.sma_slow)
@@ -93,13 +113,34 @@ class TreePcaQuantileMulti(Strategy):  #try this without inheriting from Strateg
         data_sample = atr(data_sample, self.atr_period)
         new_columns = []
         #add multiplier features
-        data_sample = self.add_multiplier_features(data_sample)
-        
+        #data_sample = self.add_multiplier_features(data_sample)
         # Add lag features
-        data_sample = self.add_lag_features(data_sample)
+        #data_sample = self.add_lag_features(data_sample)
         #fill na values with 0
         data_sample = data_sample.fillna(value=0)
+        if symbol:
+            data_sample = data_sample.rename(columns=lambda x: f"{symbol}_{x}")
         return data_sample
+
+    def combine_dates(self, main_df, dataframes):
+        # Find the common dates between the main dataframe and each dataframe in the list
+        common_dates = main_df.index
+        for df in dataframes:
+            common_dates = common_dates.intersection(df.index)
+        
+        # Align the main dataframe and all dataframes in the list to the common dates
+        main_df_aligned = main_df.loc[common_dates]
+        aligned_dataframes = [df.loc[common_dates] for df in dataframes]
+        
+        # Concatenate the main dataframe with all aligned dataframes
+        combined_dataframe = pd.concat([main_df_aligned] + aligned_dataframes, axis=1)
+        
+        return combined_dataframe
+
+    def check_nan_values(self, df):
+        nan_counts = df.isna().sum()
+        total_nan = df.isna().sum().sum()
+        return nan_counts, total_nan
 
     def train_model(self):
         # Create the features and the target
@@ -109,17 +150,21 @@ class TreePcaQuantileMulti(Strategy):  #try this without inheriting from Strateg
         self.data_train = self.get_features(self.data_train)
         # need to add the symbols to the columns of additional data. 
         self.additional_data = [self.get_features(df, symbol=symbol_name) for symbol_name, df in self.dataframes.items()]
-        #concatinate self.additional_data and data_train
-        self.data_train = pd.concat([self.data_train] + self.additional_data, axis=1)
-        # Create lists with the columns name of the features used and the target
+        #add the signal column to the original data
         self.data_train = quantile_signal(self.data_train, self.look_ahead_period, pct_split=full_split)
+        #concatinate self.additional_data and data_train
+        full_data = self.combine_dates(self.data_train, self.additional_data)
+        # Create lists with the columns name of the features used and the target
+        self.check_nan_values(full_data)
+        
+        full_data = full_data.fillna(0)
         # !! As it is very time-consuming to compute & it is not variable, we compute it outside the function
             
         list_y = ["Signal"]
-
+        #columns_to_keep = [col for col in full_data if any(x in col for x in self.list_X)]
         # Split our dataset in a train and a test set
-        split = int(len(self.data_train) * full_split)
-        X_train, X_test, y_train, y_test = data_split(self.data_train, split, self.list_X, list_y)
+        split = int(len(full_data) * full_split)
+        X_train, X_test, y_train, y_test = data_split(full_data, split, self.columns_to_keep, list_y)
 
         # Initialize the standardization model
         #sc = StandardScaler()
@@ -160,16 +205,19 @@ class TreePcaQuantileMulti(Strategy):  #try this without inheriting from Strateg
         #make sure all the data makes it into this part 
         #else add 
         # need to add the symbols to the columns of additional data. 
-        self.additional_data = [self.get_features(df, symbol=symbol_name) for symbol_name, df in self.dataframes.items()]
+        
+        self.add_data = [self.get_features(df, symbol=symbol_name) for symbol_name, df in self.dataframes.items()]
         #concatinate self.additional_data and data_train
         self.data = self.get_features(self.data)
+        # Perform an inner join to keep only the rows with values in self.data
+        self.data = self.data.join(self.add_data, how='inner')
+    
+        # Filter the dataframe to keep only the desired columns
+        #self.data = self.data[self.columns_to_keep]
         
-        self.data = pd.concat([self.data] + self.additional_data, axis=1)
-        
-        X = self.data[self.list_X]
+        X = self.data[self.columns_to_keep]
         #X_sc = self.sc.transform(X)
         #X_pca = self.pca.transform(X_sc)
-        #original code
         #predict_array = self.model.predict(X_pca)
         predict_array = self.model.predict(X)
         self.data["ml_signal"] = 0
