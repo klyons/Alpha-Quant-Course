@@ -77,8 +77,8 @@ class WalkForwardOptimizationMulti:
                 test_slice = self.main_data.iloc[end - length_test:, :] if is_last_sample else self.main_data.iloc[end - length_test:end, :]
 
             # Slice additional dataframes in aligned_additional_data
-            train_additional = {key: df.iloc[:end - length_test, :] for key, df in aligned_additional_data.items()}
-            test_additional = {key: df.iloc[end - length_test:, :] if is_last_sample else df.iloc[end - length_test:end, :] for key, df in aligned_additional_data.items()}
+            train_additional = {key: df.loc[train_slice.index] for key, df in aligned_additional_data.items()}
+            test_additional = {key: df.loc[test_slice.index] for key, df in aligned_additional_data.items()}
 
             # Append the slices to the samples
             self.train_samples.append(train_slice)
@@ -110,12 +110,12 @@ class WalkForwardOptimizationMulti:
 
         for self.params_item in np.random.choice(self.dictionaries, size=int(len(self.dictionaries) * self.randomness), replace=False):
             current_params = [self.params_item[key] for key in list(self.parameters_range.keys())]
-
-            # Convert the list of additional data back into a dictionary mapping
-            additional_data = self.add_train_samples[self.train_samples.index(self.train_sample)]
+            
+            # Use the current index to access the correct additional data
+            #additional_data = self.add_train_sample
 
             # Pass train_additional as additional_data to get_criterion
-            self.get_criterion(self.train_sample, self.params_item, additional_data)
+            self.get_criterion(self.train_sample, self.params_item, self.add_train_sample)
             current_params.append(self.criterion)
 
             storage_values_params.append(current_params)
@@ -152,9 +152,16 @@ class WalkForwardOptimizationMulti:
 
         test_params = dict(self.smooth_result.iloc[-1,:-1])
 
-        add_data = self.add_train_samples[self.train_samples.index(self.train_sample)]
+        try:
+            add_data = {key: df for key, df in self.add_test_samples[self.test_samples.index(self.test_sample)].items() if df.index.equals(self.test_sample.index)}
+        except Exception as e:
+            print(f"Error in get_smoother_result: {e}")
+            print(f"self.train_samples: {self.train_samples}")
+            print(f"self.train_sample: {self.train_sample}")
+            print(f"self.add_train_samples: {self.add_train_samples}")
+            raise
 
-        Strategy = self.TradingStrategy(self.train_sample, self.best_params_sample, **add_data)
+        Strategy = self.TradingStrategy(self.train_sample, self.best_params_sample, add_data)
 
         output_params = Strategy.output_dictionary
 
@@ -208,8 +215,24 @@ class WalkForwardOptimizationMulti:
             self.add_train_sample = self.add_train_samples[i]
             self.add_test_sample = self.add_test_samples[i]
             
-            self.get_best_params_train_set()
-            self.test_best_params()
+            try:
+                self.get_best_params_train_set()
+            except Exception as e:
+                print(f"Error in get_best_params_train_set: {e}")
+                print(f"self.train_samples: {self.train_samples}")
+                print(f"self.train_sample: {self.train_sample}")
+                print(f"self.add_train_samples: {self.add_train_samples}")
+                raise
+
+            try:
+                self.test_best_params()
+            except Exception as e:
+                print(f"Error in test_best_params: {e}") 
+                print(f"self.test_samples: {self.test_samples}")
+                print(f"self.test_sample: {self.test_sample}")
+                print(f"self.add_test_samples: {self.add_test_samples}")
+                raise
+
             current += 1
         
         now = datetime.now()
