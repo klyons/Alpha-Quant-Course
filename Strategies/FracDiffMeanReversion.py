@@ -10,6 +10,8 @@ import numpy as np
 
 #for importing the quantreo library
 import sys
+
+from sympy import frac
 sys.path.insert(0, '..')
 from Quantreo.DataPreprocessing import *
 class FracDiffMeanReversion:
@@ -40,11 +42,16 @@ class FracDiffMeanReversion:
         self.data = sma(self.data, "close", self.fast_sma)
         self.data = sma(self.data, "close", self.slow_sma)
         self.data = rsi(self.data, "close", self.rsi)
-
-        # def signal
+        self.data = get_fractional_diff(self.data, "close")
+        #find distance from the mean
+        #
+        pdb.set_trace()
+        # def signal 
         self.data["signal"] = 0
         self.data["RSI_retarded"] = self.data[f"RSI"].shift(1)
+        # if we are 2 standard deviations below from the mean, we buy
         condition_1_buy = self.data[f"SMA_{self.fast_sma}"] < self.data[f"SMA_{self.slow_sma}"]
+        # if we are 2 standard deviations above from the mean, we sell
         condition_1_sell = self.data[f"SMA_{self.fast_sma}"] > self.data[f"SMA_{self.slow_sma}"]
 
         condition_2_buy = self.data[f"RSI"] > self.data["RSI_retarded"]
