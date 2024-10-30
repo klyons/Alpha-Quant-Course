@@ -161,7 +161,7 @@ class WalkForwardOptimizationMulti:
             print(f"self.add_train_samples: {self.add_train_samples}")
             raise
 
-        Strategy = self.TradingStrategy(self.train_sample, self.best_params_sample, add_data)
+        Strategy = self.TradingStrategy(self.train_sample, self.best_params_sample, **add_data)
 
         output_params = Strategy.output_dictionary
 
