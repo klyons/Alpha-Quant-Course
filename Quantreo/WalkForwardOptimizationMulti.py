@@ -1,3 +1,5 @@
+from cv2 import add
+from torch import empty
 from tqdm import tqdm
 from datetime import datetime
 from termcolor import colored
@@ -86,6 +88,12 @@ class WalkForwardOptimizationMulti:
             self.add_train_samples.append(train_additional)
             self.add_test_samples.append(test_additional)
 
+                # Add assertions to check the shapes
+            for key, df in train_additional.items():
+                assert df.shape[0] == train_slice.shape[0], f"Shape mismatch in train_additional for key {key}: {df.shape[0]} != {train_slice.shape[0]}"
+            for key, df in test_additional.items():
+                assert df.shape[0] == test_slice.shape[0], f"Shape mismatch in test_additional for key {key}: {df.shape[0]} != {test_slice.shape[0]}"
+
             # Break if it's the last sample
             if is_last_sample:
                 break
@@ -94,6 +102,7 @@ class WalkForwardOptimizationMulti:
 
     def get_criterion(self, sample, params, additional_data):
         # Backtest initialization with a specific dataset and set of parameters
+        
         self.BT = Backtest(data=sample, TradingStrategy=self.TradingStrategy, parameters=params, **additional_data)
 
         # Compute the returns of the strategy
@@ -152,16 +161,20 @@ class WalkForwardOptimizationMulti:
 
         test_params = dict(self.smooth_result.iloc[-1,:-1])
 
-        try:
-            add_data = {key: df for key, df in self.add_test_samples[self.test_samples.index(self.test_sample)].items() if df.index.equals(self.test_sample.index)}
-        except Exception as e:
-            print(f"Error in get_smoother_result: {e}")
-            print(f"self.train_samples: {self.train_samples}")
-            print(f"self.train_sample: {self.train_sample}")
-            print(f"self.add_train_samples: {self.add_train_samples}")
-            raise
+        add_train_data = {key: df.loc[self.train_sample.index] for key, df in self.additional_data.items()}
+        
+        first_key, first_value = next(iter(add_train_data.items()))
 
-        Strategy = self.TradingStrategy(self.train_sample, self.best_params_sample, **add_data)
+        # Print debugging information
+        print(f"First key in add_data: {first_key}")
+        print(f"First value in add_data: {first_value}")
+
+        # Check if the indices of the two DataFrames match
+        if not self.train_sample.index.equals(first_value.index):
+            raise ValueError("Indices of train_sample and add_train_data do not match.")
+
+            
+        Strategy = self.TradingStrategy(self.train_sample, self.best_params_sample, **add_train_data)
 
         output_params = Strategy.output_dictionary
 
@@ -171,10 +184,9 @@ class WalkForwardOptimizationMulti:
         return output_params
 
     def test_best_params(self):
-        smooth_best_params = self.get_smoother_result()
-        pdb.set_trace()
-        add_data = self.add_test_samples[self.test_samples.index(self.test_sample)]
-        self.get_criterion(self.test_sample, smooth_best_params, add_data)
+        smooth_best_params = self.get_smoother_result() 
+        add_test_data = {key: df.loc[self.test_sample.index] for key, df in self.additional_data.items()}
+        self.get_criterion(self.test_sample, smooth_best_params, add_test_data)
 
         self.df_results.at[self.df_results.index[-1], 'criterion'] = self.criterion
         self.best_params_smoothed.append(smooth_best_params)

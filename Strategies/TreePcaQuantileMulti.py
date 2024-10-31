@@ -188,7 +188,6 @@ class TreePcaQuantileMulti(Strategy):  #try this without inheriting from Strateg
             'clf__max_depth': [4, 6, 8]
         }
 
-        
         ml_model = GridSearchCV(pipe, grid, cv=tscv)
         ml_model.fit(X_train, y_train)
         
