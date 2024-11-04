@@ -69,7 +69,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     
     #this is the dependent variable
     df = load_and_process_data(instrument=instrument, symbol=symbol, multiplier= multiplier, timespan=timespan)
-    df = df.tail(50_000)
+    df = df.head(2_000)
     #then we load a variety of independent variables
     #df_aapl = load_and_process_data(instrument=instrument, symbol='AAPL', multiplier= multiplier, timespan=timespan)
     #df_ief = load_and_process_data(instrument=instrument, symbol='IEF', multiplier= multiplier, timespan=timespan)
@@ -108,14 +108,14 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     print(params)
 
     # Extract the
-    model = params["model"]
+    # model = params["model"]
     sc = params["sc"]
-    pca = params["pca"]
+    # pca = params["pca"]
 
     if save:
-        dump(model, f"../models/saved/{name}_model.jolib")
+        #dump(model, f"../models/saved/{name}_model.jolib")
         dump(sc, f"../models/saved/{name}_sc.jolib")
-        dump(pca, f"../models/saved/{name}_pca.jolib")
+        # dump(pca, f"../models/saved/{name}_pca.jolib")
 
     # Show the results
     WFO.display()

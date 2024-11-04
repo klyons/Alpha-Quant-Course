@@ -9,7 +9,7 @@ quantreo_path = os.path.join(current_working_directory, 'quantreo')
 # Add the quantreo folder to the Python path
 sys.path.append(quantreo_path)
 
-from Strategies.BinLogRegPipeline import *  # TreePcaQuantile_Pipeline
+from Strategies.FracDiffMeanReversion import *  # TreePcaQuantile_Pipeline
 from Quantreo.Backtest import Backtest
 from Quantreo.WalkForwardOptimization import WalkForwardOptimization
 from Data.create_databases import DataHandler
@@ -52,7 +52,7 @@ def get_data(symbol='SPY', timespan='M', multiplier=10, instrument='Equities'):
 
 def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_params = None,train_length=200_000):
     save = False
-    name = f"TreePcaQuantile_{symbol}_{multiplier}{timespan}"
+    name = f"fracDiff_{symbol}_{multiplier}{timespan}"
     
     df = get_data(symbol, timespan, multiplier, instrument)
 
@@ -62,19 +62,15 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     }
 
     params_fixed = {
-        "look_ahead_period": 10,
-        "sma_fast": 30,
-        "sma_slow":80,
-        "rsi":14,
-        "atr":5,
-        "cost": 0.00001,
+        "fast_sma": 72,
+        "slow_sma": 120,
+        "rsi": 25,
+        "cost": 0.0001,
         "leverage": 5,
-        "list_X": ["SMA_diff", "RSI", "ATR","candle_way", "filling", "amplitude", "previous_ret"],
-        "train_mode": True,
-        "lags": 5,
+        "bb_SD": 2
     }
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
-    WFO = WalkForwardOptimization(df, BinLogRegPipeline, params_fixed, params_range,length_train_set=100_000, randomness=1.00, anchored=False)
+    WFO = WalkForwardOptimization(df, FracDiffMeanReversion, params_fixed, params_range,length_train_set=train_length, randomness=1.00, anchored=False)
     WFO.run_optimization()
 
     # Extract best parameters
@@ -82,9 +78,9 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     print("BEST PARAMETERS")
     print(params)
 
-    model = params["model"]
-    if save:
-        dump(model, f"../models/saved/{name}_model.jolib")
+    #model = params["model"]
+    #if save:
+        #dump(model, f"../models/saved/{name}_model.jolib")
 
     # Show the results
     WFO.display()
@@ -98,7 +94,7 @@ if __name__ == "__main__":
     timespan = 'M'
     multiplier = 3
     # symbol='SPY', timespan='minute', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000
-    run(symbol=symbol, instrument=instrument, timespan=timespan, multiplier=multiplier )
+    run(symbol=symbol, instrument=instrument, timespan=timespan, multiplier=multiplier, train_length=100_000 )
     
     '''
     

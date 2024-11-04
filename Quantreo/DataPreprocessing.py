@@ -10,7 +10,7 @@ import pdb
 # if you want the three barriers method,call the get_barriers_signal
 
 
-def get_fractional_diff(df, col, d=0.5):
+def get_fractional_diff(df, col, d=0.6):
 	"""
 	Calculates the fractional difference of a given column in a DataFrame.
 	Parameters:
@@ -27,7 +27,7 @@ def get_fractional_diff(df, col, d=0.5):
 
 	df_copy = df.copy()
 	fracdiff = Fracdiff(d=d)
-	df_copy[f"{col}_frac_diff_{d}"] = fracdiff.fit_transform(df_copy[col].values.reshape(-1, 1)).flatten()
+	df_copy[f"frac_diff"] = fracdiff.fit_transform(df_copy[col].values.reshape(-1, 1)).flatten()
 
 	return df_copy
 
@@ -67,6 +67,14 @@ def sma(df, col, n):
 	df[f"SMA_{n}"] = ta.trend.SMAIndicator(df[col],int(n)).sma_indicator()
 	return df
 
+def bollinger_bands(df, col, n, d = 2):
+    df = df.copy()
+    # Calculate the Bollinger Bands
+    indicator_bb = ta.volatility.BollingerBands(close=df[col], window=n, window_dev = d)
+    df[f"Bollinger_Middle_{d}"] = indicator_bb.bollinger_mavg()
+    df[f"Bollinger_Upper_{d}"] = indicator_bb.bollinger_hband()
+    df[f"Bollinger_Lower_{d}"] = indicator_bb.bollinger_lband()
+    return df
 
 def sma_diff(df, col, n, m):
 	df = df.copy()

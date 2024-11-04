@@ -254,15 +254,21 @@ class WalkForwardOptimizationMulti:
     def display(self):
         # Empty dataframe that will be filled by the result on each period
         df_test_result = pd.DataFrame()
-
-        for params, test in zip(self.best_params_smoothed, self.test_samples):
+        add_test_data = pd.DataFrame()
+        #added self.train_samples to the zip also add_test
+        #for params, test in zip(self.best_params_smoothed, self.test_samples):
+        for params, test, add_test in zip(self.best_params_smoothed, self.test_samples, self.add_test_samples):
             # !! Here, we can call directly the model without run again the model because the optimal weights are
             # computed already and stored into the output dictionary and so in the self.best_params_smoothed list
-            self.BT = Backtest(data=test, TradingStrategy=self.TradingStrategy, parameters=params, **self.add_test_sample)
+            pdb.set_trace()
+            self.BT = Backtest(data=test, TradingStrategy=self.TradingStrategy, parameters=params, **add_test)
             self.BT.run()
             df_test_result = pd.concat((df_test_result, self.BT.data), axis=0)
-
+            #temp_train_data = {key: df.loc[df_test_result] for key, df in self.additional_data.items()}
+            #add_train_data = pd.concat((add_train_data, add_test), axis=0)
         # Print the backtest for the period following the walk-forward method
-        self.BT = Backtest(data=df_test_result, TradingStrategy=self.TradingStrategy, parameters=params, **self.add_test_sample)
+        pdb.set_trace()
+        add_test_data = {key: df.loc[df_test_result] for key, df in self.additional_data.items()}
+        self.BT = Backtest(data=df_test_result, TradingStrategy=self.TradingStrategy, parameters=params, **add_test_data)
         self.BT.run()
         self.BT.plot()

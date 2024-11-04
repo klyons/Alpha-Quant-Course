@@ -26,6 +26,7 @@ class FracDiffMeanReversion:
         self.leverage = parameters["leverage"]
         self.get_features()
         self.start_date_backtest = self.data.index[0]
+        self.SD = parameters["bb_SD"]
 
         # Get Entry parameters
         self.buy, self.sell = False, False
@@ -43,16 +44,17 @@ class FracDiffMeanReversion:
         self.data = sma(self.data, "close", self.slow_sma)
         self.data = rsi(self.data, "close", self.rsi)
         self.data = get_fractional_diff(self.data, "close")
+        self.data = bollinger_bands(self.data, "frac_diff", n = 20, d = 2)
         #find distance from the mean
         #
-        pdb.set_trace()
         # def signal 
         self.data["signal"] = 0
         self.data["RSI_retarded"] = self.data[f"RSI"].shift(1)
-        # if we are 2 standard deviations below from the mean, we buy
-        condition_1_buy = self.data[f"SMA_{self.fast_sma}"] < self.data[f"SMA_{self.slow_sma}"]
+        # if we are self.SD standard deviations below from the mean, we buy
+
+        condition_1_buy = self.data[f"frac_diff"] < self.data[f"Bollinger_Lower_2"]
         # if we are 2 standard deviations above from the mean, we sell
-        condition_1_sell = self.data[f"SMA_{self.fast_sma}"] > self.data[f"SMA_{self.slow_sma}"]
+        condition_1_sell = self.data[f"frac_diff"] > self.data[f"Bollinger_Upper_2"]
 
         condition_2_buy = self.data[f"RSI"] > self.data["RSI_retarded"]
         condition_2_sell = self.data[f"RSI"] < self.data["RSI_retarded"]
