@@ -2,7 +2,7 @@
 #C:\ws\Alpha-Quant-Course\Strategies\KL_2023_02_LogRegPCA_Pipeline.py
 import sys
 sys.path.insert(0, '..')
-from Strategies.KL_2023_02_LogRegPCA_Pipeline import *
+from quantreo.Strategies.LogRegPCA_Pipeline import *
 from Quantreo.Backtest import *
 from Quantreo.WalkForwardOptimization import *
 

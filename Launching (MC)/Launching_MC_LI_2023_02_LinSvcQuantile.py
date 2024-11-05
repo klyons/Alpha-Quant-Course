@@ -6,7 +6,7 @@ import sys
 sys.path.append('C:/ws/ALPHA-QUANT-COURSE/')  
 
 from Quantreo.MonteCarlo import *
-from Strategies.LI_2023_02_LinSvcQuantile import *
+from quantreo.Strategies.LinSvcQuantile import *
 import warnings
 warnings.filterwarnings("ignore")
 

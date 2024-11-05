@@ -80,10 +80,12 @@ class TreePcaQuantile:
         data_sample = candle_information(data_sample)
         data_sample = atr(data_sample,self.atr_period)
         # add lags
+        new_columns = []
         for col in self.list_X:
             for lag in range(1,self.lags + 1):
                 data_sample[col + "_lag_" + str(lag)] = data_sample[col].shift(lag)
-        
+                new_columns.append(f"{col}_l{lag}")
+        self.list_X = self.list_X + new_columns
         data_sample = data_sample.fillna(value=0)
 
         return data_sample
@@ -132,7 +134,7 @@ class TreePcaQuantile:
         X_sc = self.sc.transform(X)
         X_pca = self.pca.transform(X_sc)
 
-        predict_array = self.model.predict(X_pca)
+        predict_array = self.model.predict(X)
         self.data["ml_signal"] = 0
         self.data["ml_signal"] = predict_array
 

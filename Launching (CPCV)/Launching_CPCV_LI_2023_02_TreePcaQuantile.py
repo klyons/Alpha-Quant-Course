@@ -4,9 +4,9 @@ import sys
 # in the sys.path list
 sys.path.append('C:/ws/ALPHA-QUANT-COURSE/') 
 
-from Strategies.LI_2023_02_RsiSma import *
+from quantreo.Strategies.RsiSma import *
 from Quantreo.CombinatorialPurgedCV import *
-from Strategies.LI_2023_02_TreePcaQuantile import *
+from quantreo.Strategies.TreePcaQuantile import *
 from Quantreo.CombinatorialPurgedCV import *
 
 

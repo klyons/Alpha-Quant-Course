@@ -1,7 +1,7 @@
 import sys
 sys.path.insert(0, '..')
 
-from Strategies.LI_2023_02_Ichimoku_1 import *
+from quantreo.Strategies.Ichimoku_1 import *
 from Quantreo.CombinatorialPurgedCV import *
 
 

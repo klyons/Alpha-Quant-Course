@@ -1,6 +1,6 @@
 import sys
 sys.path.insert(0, '..')
-from quantreo.Strategies.TreePcaQuantile_Pipeline import *
+from quantreo.Strategies.TreePcaQuantilePipeline import *
 from Quantreo.Backtest import *
 from Quantreo.WalkForwardOptimization import *
 import pdb
@@ -19,21 +19,21 @@ def run_wfo(df = None):
     pdb.set_trace()
 
     #this is for currencies
-    #params_range = {
-    #    "tp": [0.005 + i*0.002 for i in range(3)],
-    #    "sl": [-0.005 - i*0.002 for i in range(3)],
-    #}
-
     params_range = {
-        "tp": [0.25 + i*0.05 for i in range(3)],
-        "sl": [-0.25 - i*0.05 for i in range(3)],
+        "tp": [0.002 + i*0.001 for i in range(3)],
+        "sl": [-0.002 - i*0.001 for i in range(3)],
     }
+
+    #params_range = {
+    #    "tp": [0.25 + i*0.05 for i in range(3)],
+    #    "sl": [-0.2 - i*0.05 for i in range(3)],
+    #}
 
 
     params_fixed = {
-        "look_ahead_period": 20,
-        "sma_slow": 120,
-        "sma_fast": 30,
+        "look_ahead_period": 10,
+        "sma_slow": 30,
+        "sma_fast": 10,
         "rsi": 21,
         "atr": 15,
         "cost": 0.01, #0.0001,

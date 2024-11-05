@@ -7,7 +7,7 @@ quantreo_path = os.path.join(current_working_directory, 'quantreo')
 # Add the quantreo folder to the Python path
 sys.path.append(quantreo_path)
 
-from Strategies.TreePcaQuantile_Pipeline import *
+from quantreo.Strategies.TreePcaQuantilePipeline import *
 from Quantreo.Backtest import *
 from Quantreo.WalkForwardOptimizationMulti import *
 

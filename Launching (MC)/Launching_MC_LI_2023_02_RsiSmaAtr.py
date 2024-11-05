@@ -4,7 +4,7 @@ import sys
 # in the sys.path list
 sys.path.append('C:/ws/ALPHA-QUANT-COURSE/') 
 from Quantreo.MonteCarlo import *
-from Strategies.LI_2023_02_RsiSmaAtr import *
+from quantreo.Strategies.RsiSmaAtr import *
 import warnings
 warnings.filterwarnings("ignore")
 

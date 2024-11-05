@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import pdb
 
 
 class Backtest:
@@ -33,12 +34,13 @@ class Backtest:
         The title of the backtest's plot. If None, a default title will be used.
     """
 
-    def __init__(self, data, TradingStrategy, parameters, run_directly=False, title=None):
+    def __init__(self, data, TradingStrategy, parameters, run_directly=False, title=None, **kwargs):
         # Set parameters
-        self.TradingStrategy = TradingStrategy(data, parameters)
+        self.kwargs = kwargs
+        self.TradingStrategy = TradingStrategy(data, parameters, **self.kwargs)
         self.start_date_backtest = self.TradingStrategy.start_date_backtest
         self.data = data.loc[self.start_date_backtest:]
-
+        
         if "returns" not in self.data.columns:
             self.data["returns"] = 0
         if "duration" not in self.data.columns:

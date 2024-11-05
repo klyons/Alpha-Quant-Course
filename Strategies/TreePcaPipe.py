@@ -17,6 +17,7 @@ Good to know: Only one trade at time (we can't have a buy and a sell position in
 How to improve this algorithm?: Put variable Take-profit and Stop loss
 """
 
+from hmac import new
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
@@ -84,10 +85,12 @@ class TreePcaPipe:
         data_sample = atr(data_sample,self.atr_period)
         #hard code columns to shift for now
         columns_to_shift = self.list_X
-        
+        new_columns = []
         for col in self.list_X:
             for lag in self.lags:
                 data_sample[f"{col}_l{lag}"] = data_sample[col].shift(lag)
+                new_columns.append(f"{col}_l{lag}")
+        self.list_X = self.list_X + new_columns
         #data_sample.drop(data_sample.tail(2).index,inplace=True)
         data_sample = data_sample.fillna(value=0)
         return data_sample
@@ -150,7 +153,8 @@ class TreePcaPipe:
 
     def get_predictions(self):
         self.data = self.get_features(self.data)
-
+        # add shifted data columns to self.list_X
+        
         X = self.data[self.list_X]
         #X_sc = self.sc.transform(X)
         #X_pca = self.pca.transform(X_sc)
