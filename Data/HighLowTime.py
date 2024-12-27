@@ -19,7 +19,12 @@ class TimeframeAnalyzer:
         :return: self._data with three new columns: Low_time (TimeStamp), High_time (TimeStamp), High_first (Boolean)
         """
         df = df.copy()
-        df = df.loc[df_lower_timeframe.index[0]:]
+        try:
+            df = df.loc[df_lower_timeframe.index[0]:]
+        except IndexError as e:
+            pdb.set_trace()
+            raise e
+        #df = df.loc[df_lower_timeframe.index[0]:]
 
         # Set new columns
         df["low_time"] = np.nan
@@ -53,6 +58,7 @@ class TimeframeAnalyzer:
         # if percentage_garbage_row<95:
         print(f"WARNINGS: Garbage row: {'%.2f' % percentage_garbage_row} %")
         self._data = df.iloc[:-1]
+        return df 
         
     def get_data(self):
         return self._data
@@ -90,17 +96,17 @@ class TimeframeAnalyzer:
                 if not sub_files:
                     pdb.set_trace()
                     numeric_values = int(re.findall(r'\d+', sub_time)[0])
-                    sub_timespan = re.sub(r'\d+', '', timeframe)                    
-                    DataHandler().get_equity(instrument, multiplier=numeric_values, timespan=sub_timespan)
+                    DataHandler().get_equity(instrument, multiplier=numeric_values, timespan=re.sub(r'\d+', '', sub_time))
                     sub_files = glob.glob(os.path.join(child_path, f"{instrument}_{sub_time}.parquet"))
 
                 if sub_files:
                     sub_file = sub_files[0]
                     schema = pq.read_schema(file)
-                    if 'high_time' not in schema.names and 'low_time' not in schema.names:
+                    if 'high_time' not in schema.names and 'low_time' not in schema.names:                        
                         high_tf = pd.read_parquet(file)
                         sub_tf = pd.read_parquet(sub_file)
-                        self.find_timestamp_extremum(high_tf, sub_tf)
+                        df = self.find_timestamp_extremum(high_tf, sub_tf)
+                        df.to_parquet(file)
 
     def high_low_currencies(self, timespan):
         sub_timeframe_map = {
