@@ -22,6 +22,7 @@ class TimeframeAnalyzer:
         try:
             df = df.loc[df_lower_timeframe.index[0]:]
         except IndexError as e:
+            print("error in lower timeframe index")
             pdb.set_trace()
             raise e
         #df = df.loc[df_lower_timeframe.index[0]:]
@@ -87,17 +88,15 @@ class TimeframeAnalyzer:
         parent_path, child_path = self.get_paths(cwd, timespan, sub_timeframe_map)
 
         for file in glob.glob(os.path.join(parent_path, "*.parquet")):
+            pdb.set_trace()
             data = os.path.basename(file)
             instrument, timeframe = data.split('_')[0], data.split('_')[1].split('.')[0]
             sub_time = sub_timeframe_map.get(timeframe, "")
-
-            if sub_time:
+            if sub_time:                
                 sub_files = glob.glob(os.path.join(child_path, f"{instrument}_{sub_time}.parquet"))
-                if not sub_files:
-                    pdb.set_trace()
-                    numeric_values = int(re.findall(r'\d+', sub_time)[0])
-                    DataHandler().get_equity(instrument, multiplier=numeric_values, timespan=re.sub(r'\d+', '', sub_time))
-                    sub_files = glob.glob(os.path.join(child_path, f"{instrument}_{sub_time}.parquet"))
+                numeric_values = int(re.findall(r'\d+', sub_time)[0])
+                DataHandler().get_equity(instrument, multiplier=numeric_values, timespan=re.sub(r'\d+', '', sub_time))
+                sub_files = glob.glob(os.path.join(child_path, f"{instrument}_{sub_time}.parquet"))
 
                 if sub_files:
                     sub_file = sub_files[0]
