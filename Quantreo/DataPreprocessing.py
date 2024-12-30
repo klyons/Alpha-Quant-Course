@@ -7,7 +7,35 @@ from fracdiff.sklearn import Fracdiff, FracdiffStat
 import pdb
 
 
-# if you want the three barriers method,call the get_barriers_signal
+def breakout(df, n = 10, decay_factor=0.9):
+    """
+    Generate a signal based on close price breaking 
+    above or below the high over the past n datapoints, 
+    and apply exponential decay to the signal.
+
+    Parameters:
+    df (pd.DataFrame): DataFrame containing 'close' and 'high' columns.
+    n (int): Number of datapoints to look back.
+    decay_factor (float): Exponential decay factor. Default is 0.9.
+
+    Returns:
+    pd.DataFrame: DataFrame with the breakout signal applied.
+    """
+    # Create a copy of the DataFrame
+    df_copy = df.copy()
+
+    # Calculate the rolling high and low over the past n datapoints
+    rolling_high = df_copy['high'].rolling(window=n).max()
+    rolling_low = df_copy['low'].rolling(window=n).min()
+
+    # Generate the signal
+    signal = np.where(df_copy['close'] > rolling_high, 1, np.where(df_copy['close'] < rolling_low, -1, 0))
+
+    # Apply exponential decay to the signal
+    df_copy[f'breakout_{n}'] = pd.Series(signal).ewm(alpha=1-decay_factor).mean()
+
+    return df_copy
+
 
 
 def get_fractional_diff(df, col, d=0.6):

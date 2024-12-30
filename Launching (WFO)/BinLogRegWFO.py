@@ -67,8 +67,8 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         
         
     params_range = {
-        "tp": [0.0005 + i*0.0002 for i in range(4)],
-        "sl": [-0.0005 - i*0.0002 for i in range(4)],
+        "tp": [0.0007 + i*0.0001 for i in range(4)],
+        "sl": [-0.0007 - i*0.0001 for i in range(4)],
     }
 
     params_fixed = {
@@ -77,7 +77,8 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         "sma_slow":60,
         "rsi":14,
         "atr":5,
-        "cost": 0.00002,
+        "breakout_period": 10,
+        "cost": 0.00003,
         "leverage": 5,
         "list_X": ["SMA_diff", "RSI", "ATR","candle_way", "filling", "amplitude", "previous_ret"],
         "train_mode": True,
