@@ -50,22 +50,22 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         df = pd.read_parquet(file_path)
 
     params_range = {
-        "tp": [0.00075 + i*0.0001 for i in range(4)],
-        "sl": [-0.00075 - i*0.0001 for i in range(4)],
+        "tp": [0.0007 + i*0.0001 for i in range(4)],
+        "sl": [-0.0007 - i*0.0001 for i in range(4)],
     }   
 
     params_fixed = {
-        "look_ahead_period": 6,  #this parameter sets the dependent variable
+        "look_ahead_period": 5,  #this parameter sets the dependent variable
         "sma_slow": 30,
         "sma_fast": 10,
         "rsi": 21,
         "atr": 10,
-        "cost": 0.00002, 
+        "cost": 0.00003, 
         "leverage": 5,
         "list_X": ["SMA_diff", "RSI", "ATR", "candle_way", "filling", "amplitude", "SPAN_A", "SPAN_B", "BASE", "STO_RSI",
                 "STO_RSI_D", "STO_RSI_K", "previous_ret"],
         "train_mode": True,
-        "lags": 5
+        "lags": 0
     }
 
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
