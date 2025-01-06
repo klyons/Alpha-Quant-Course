@@ -31,7 +31,7 @@ class BinLogReg:
         self.train_mode = parameters["train_mode"]
         self.sma_fast, self.sma_slow = parameters["sma_fast"], parameters["sma_slow"]
         self.rsi_period, self.atr_period = parameters["rsi"], parameters["atr"]
-        self.breakout_pariod = parameters["breakout_period"]
+        self.breakout_period = parameters["breakout_period"]
         self.look_ahead_period = parameters["look_ahead_period"]
         self.lags = parameters["lags"]
 
@@ -65,10 +65,10 @@ class BinLogReg:
     def get_features(self, data_sample):
         data_sample = sma_diff(data_sample, "close", self.sma_fast, self.sma_slow)
         data_sample = rsi(data_sample, "close", self.rsi_period)
-
+        data_sample = breakout(data_sample, n = self.breakout_period)
         data_sample = atr(data_sample,self.atr_period)
         data_sample = data_sample.fillna(value=0)
-        data_sample = breakout(data_sample, n = self.breakout_period)
+        
 
         return data_sample
 

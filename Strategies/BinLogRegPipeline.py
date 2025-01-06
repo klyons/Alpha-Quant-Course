@@ -28,7 +28,6 @@ sys.path.insert(0, '..')
 from Quantreo.DataPreprocessing import *
 
 class BinLogRegPipeline():
-
 	def __init__(self, data, parameters):
 		# Set parameters
 		self.list_X = parameters["list_X"]
@@ -38,6 +37,8 @@ class BinLogRegPipeline():
 		self.sma_fast, self.sma_slow = parameters["sma_fast"], parameters["sma_slow"]
 		self.rsi_period, self.atr_period = parameters["rsi"], parameters["atr"]
 		self.look_ahead_period = parameters["look_ahead_period"]
+		self.breakout_period = parameters["breakout_period"]
+  
 		self.lags = parameters["lags"]
 		self.multiply_data = False
 		if parameters.get("multiply_data"):
@@ -76,6 +77,8 @@ class BinLogRegPipeline():
 		data_sample = rsi(data_sample, "close", self.rsi_period)
 		data_sample = candle_information(data_sample)
 		data_sample = previous_ret(data_sample, "close", 1)
+		data_sample = alpha_01(data_sample)
+		data_sample = alpha_02(data_sample)
 
 		data_sample = atr(data_sample,self.atr_period)
 		new_columns = []
@@ -130,6 +133,7 @@ class BinLogRegPipeline():
 		}
 		#add time series cross validation
 		ml_model = GridSearchCV(pipe, grid, cv=tscv, n_jobs=-1)
+		y_train = np.ravel(y_train)
 		ml_model.fit(X_train, y_train)
 
 		# print model logistics and

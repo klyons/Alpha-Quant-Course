@@ -102,6 +102,7 @@ class TreePcaQuantilePipeline():
         data_sample = ichimoku(data_sample, 27, 78)
         data_sample = sto_rsi(data_sample, "close", 14)
         data_sample = previous_ret(data_sample, "close", 1)
+        data_sample = alpha_01(data_sample)
         
         # add multiplier features
         multiplier_columns = []
