@@ -11,6 +11,7 @@ quantreo_path = os.path.join(current_working_directory, 'quantreo')
 sys.path.append(quantreo_path)
 
 from Strategies.BinLogRegPipeline import *  # TreePcaQuantile_Pipeline
+from Strategies.TreePcaQuantilePipeline import *  # TreePcaQuantile_Pipeline
 from Quantreo.Backtest import Backtest
 from Quantreo.WalkForwardOptimization import WalkForwardOptimization
 from Data.create_databases import DataHandler
@@ -30,7 +31,7 @@ def get_data(symbol='SPY', timespan='M', multiplier=10, instrument='Equities'):
     # Instantiate data classes
     DataObj = DataHandler()
     TimeCorrection = TimeframeAnalyzer()
-    
+
     if os.path.exists(file_path):
         df = pd.read_parquet(file_path)
         if 'high_time' not in df.columns or 'low_time' not in df.columns:
@@ -55,7 +56,7 @@ def get_data(symbol='SPY', timespan='M', multiplier=10, instrument='Equities'):
 
 def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_params = None,train_length=100_000):
     save = False
-    name = f"BinLogReg_{symbol}_{multiplier}{timespan}"
+    name = f"TreePcaQuantile_{symbol}_{multiplier}{timespan}"
     
     
     df = get_data(symbol, timespan, multiplier, instrument)
@@ -67,25 +68,25 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         
         
     params_range = {
-        "tp": [0.0007 + i*0.0001 for i in range(4)],
-        "sl": [-0.0007 - i*0.0001 for i in range(4)],
+        "tp": [0.00075 + i*0.0002 for i in range(4)],
+        "sl": [-0.00075 - i*0.0002 for i in range(4)],
     }
 
     params_fixed = {
-        "look_ahead_period": 5,
-        "sma_fast": 20,
-        "sma_slow":60,
-        "rsi":14,
-        "atr":5,
-        "breakout_period": 10,
-        "cost": 0.00003,
+        "look_ahead_period": 6,  #this parameter sets the dependent variable
+        "sma_slow": 30,
+        "sma_fast": 10,
+        "rsi": 21,
+        "atr": 10,
+        "cost": 0.00002, 
         "leverage": 5,
-        "list_X": ["SMA_diff", "RSI", "ATR","candle_way", "filling", "amplitude", "previous_ret"],
+        "list_X": ["SMA_diff", "RSI", "ATR", "candle_way", "filling", "amplitude", "SPAN_A", "SPAN_B", "BASE", "STO_RSI",
+                "STO_RSI_D", "STO_RSI_K", "previous_ret"],
         "train_mode": True,
-        "lags": 5,
+        "lags": 0
     }
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
-    WFO = WalkForwardOptimization(df, BinLogRegPipeline, params_fixed, params_range,length_train_set=10_000, randomness=1.00, anchored=False)
+    WFO = WalkForwardOptimization(df, TreePcaQuantilePipeline, params_fixed, params_range,length_train_set=10_000, randomness=1.00, anchored=False)
     WFO.run_optimization()
 
     # Extract best parameters

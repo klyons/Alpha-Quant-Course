@@ -7,7 +7,70 @@ from fracdiff.sklearn import Fracdiff, FracdiffStat
 import pdb
 
 
-# if you want the three barriers method,call the get_barriers_signal
+def breakout(df, n = 10, decay_factor=0.9):
+    """
+    Generate a signal based on close price breaking 
+    above or below the high over the past n datapoints, 
+    and apply exponential decay to the signal.
+
+    Parameters:
+    df (pd.DataFrame): DataFrame containing 'close' and 'high' columns.
+    n (int): Number of datapoints to look back.
+    decay_factor (float): Exponential decay factor. Default is 0.9.
+
+    Returns:
+    pd.DataFrame: DataFrame with the breakout signal applied.
+    """
+    # Create a copy of the DataFrame
+    df_copy = df.copy()
+
+    # Calculate the rolling high and low over the past n datapoints
+    rolling_high = df_copy['high'].rolling(window=n).max()
+    rolling_low = df_copy['low'].rolling(window=n).min()
+
+    # Generate the signal
+    signal = np.where(df_copy['close'] > rolling_high, 1, np.where(df_copy['close'] < rolling_low, -1, 0))
+
+    # Apply exponential decay to the signal
+    df_copy[f'breakout_{n}'] = pd.Series(signal).ewm(alpha=1-decay_factor).mean()
+
+    return df_copy
+
+import pandas as pd
+import numpy as np
+
+def alpha_01(df, decay_days=2):
+    """
+    Calculate the alpha for stocks above and below their VWAP.
+
+    Parameters:
+    df (pd.DataFrame): DataFrame containing 'close' and 'vwap' columns.
+    decay_days (int): Number of days for exponential decay. Default is 2.
+
+    Returns:
+    pd.Series: Alpha values for the stocks.
+    """
+    df_copy = df.copy()
+    # Calculate relative days since max close
+    rel_days_since_max = df_copy['close'].rolling(window=30).apply(np.argmax, raw=True)
+    rel_days_since_max_rank = rel_days_since_max.rank()
+
+    # Calculate decline percentage
+    decline_pct = (df_copy['vwap'] - df_copy['close']) / df_copy['close']
+
+    # Calculate exponential decay
+    decay = rel_days_since_max_rank.ewm(span=decay_days).mean()
+
+    # Calculate alpha for stocks above VWAP
+    alpha_above = decline_pct / np.minimum(decay, 0.20)
+
+    # Calculate alpha for stocks below VWAP
+    alpha_below = -decline_pct / np.minimum(decay, 0.20)
+
+    # Combine the two alphas
+    alpha = np.where(df['close'] > df['vwap'], alpha_above, alpha_below)
+    df_copy['alpha_01'] = pd.Series(alpha, index=df.index)
+    return df_copy
 
 
 def get_fractional_diff(df, col, d=0.6):
