@@ -92,11 +92,11 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
 if __name__ == "__main__":
     #populate with what you want
     
-    symbol = 'SPY'
+    symbol = 'IWM'
     instrument = 'Equities'
     # use 'M' for minute 'H' for hour and 'S' for second
-    timespan = 'M'
-    multiplier = 3
+    timespan = 'H'
+    multiplier = 1
     # symbol='SPY', timespan='minute', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000
     run(symbol=symbol, instrument=instrument, timespan=timespan, multiplier=multiplier )
     
