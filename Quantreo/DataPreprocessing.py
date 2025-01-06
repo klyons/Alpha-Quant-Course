@@ -37,52 +37,35 @@ def breakout(df, n = 10, decay_factor=0.9):
 
     return df_copy
 
-def alpha_01(df, decay_days=2):
-    """
+def dist_vwap(df, decay_days=2):
+	"""
     Calculate the alpha for stocks above and below their VWAP.
-
-    Parameters:
-    df (pd.DataFrame): DataFrame containing 'close' and 'vwap' columns.
-    decay_days (int): Number of days for exponential decay. Default is 2.
-
-    Returns:
-    pd.Series: Alpha values for the stocks.
     """
-    df_copy = df.copy()
-    # Calculate relative days since max close
-    rel_days_since_max = df_copy['close'].rolling(window=30).apply(np.argmax, raw=True)
-    rel_days_since_max_rank = rel_days_since_max.rank()
-
+	df_copy = df.copy()
+	# Calculate relative days since max close
+	rel_days_since_max = df_copy['close'].rolling(window=30).apply(np.argmax, raw=True)
+	rel_days_since_max_rank = rel_days_since_max.rank()
+	df_copy['vwap'] = df_copy['open'].add(df_copy['high']).add(df_copy['low']).add(df_copy['close']).div(4)
     # Calculate decline percentage
-    decline_pct = (df_copy['vwap'] - df_copy['close']) / df_copy['close']
+	decline_pct = (df_copy['vwap'] - df_copy['close']) / df_copy['close']
 
-    # Calculate exponential decay
-    decay = rel_days_since_max_rank.ewm(span=decay_days).mean()
+	# Calculate exponential decay
+	decay = rel_days_since_max_rank.ewm(span=decay_days).mean()
 
     # Calculate alpha for stocks above VWAP
-    alpha_above = decline_pct / np.minimum(decay, 0.20)
+	alpha_above = decline_pct / np.minimum(decay, 0.20)
 
     # Calculate alpha for stocks below VWAP
-    alpha_below = -decline_pct / np.minimum(decay, 0.20)
+	alpha_below = -decline_pct / np.minimum(decay, 0.20)
 
     # Combine the two alphas
-    alpha = np.where(df['close'] > df['vwap'], alpha_above, alpha_below)
-    df_copy['alpha_01'] = pd.Series(alpha, index=df.index)
-    return df_copy
+	alpha = np.where(df['close'] > df['vwap'], alpha_above, alpha_below)
+	df_copy['dist_vwap'] = pd.Series(alpha, index=df.index)
+	return df_copy
 
-def alpha_02(df, periods=5):
-    """
-    Calculate the alpha -delta(close, periods).
-
-    Parameters:
-    df (pd.DataFrame): DataFrame containing 'close' column.
-    periods (int): Number of periods to look back. Default is 5.
-
-    Returns:
-    pd.DataFrame: DataFrame with the alpha added as a new column.
-    """
+def change(df, periods=5):
     df_copy = df.copy()
-    df_copy['alpha_02'] = -(df_copy['close'] - df_copy['close'].shift(periods))
+    df_copy['change'] = -(df_copy['close'] - df_copy['close'].shift(periods))
     return df_copy
 
 
@@ -1085,21 +1068,19 @@ def alpha014(df, o, v, r):
                                                 np.inf],
                                             np.nan))
     
-    df_copy['alpha014'] = alpha.stack('ticker').swaplevel()
+    df_copy['alpha014'] = alpha
 
 def alpha015(df, h, v):
     df_copy = df.copy()
     alpha = (-ts_sum(rank(ts_corr(rank(h), rank(v), 3)
                         .replace([-np.inf, np.inf], np.nan)), 3))
-    df_copy['alpha015'] = alpha.stack('ticker').swaplevel()
+    df_copy['alpha015'] = alpha
     return df_copy
 
 
 def alpha016(df, h, v):
     df_copy = df.copy()
     alpha = -rank(ts_cov(rank(h), rank(v), 5))
-            .stack('ticker')
-            .swaplevel()
     df_copy['alpha016'] = alpha
     return df_copy
 
@@ -1209,6 +1190,7 @@ def alpha026(df, h, v):
     df_copy['alpha026'] = alpha
     return df_copy
 
+'''
 def alpha027(v, vwap):
     cond = rank(ts_mean(ts_corr(rank(v),
                                 rank(vwap), 6), 2))
@@ -1714,7 +1696,7 @@ def alpha101(o, h, l, c):
     return (c.sub(o).div(h.sub(l).add(1e-3))
             .stack('ticker')
             .swaplevel())
-
+'''
 class Alphas101:
 
     def __init__(self):

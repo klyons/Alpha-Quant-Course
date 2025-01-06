@@ -37,8 +37,7 @@ class BinLogRegPipeline():
 		self.sma_fast, self.sma_slow = parameters["sma_fast"], parameters["sma_slow"]
 		self.rsi_period, self.atr_period = parameters["rsi"], parameters["atr"]
 		self.look_ahead_period = parameters["look_ahead_period"]
-		self.breakout_period = parameters["breakout_period"]
-  
+
 		self.lags = parameters["lags"]
 		self.multiply_data = False
 		if parameters.get("multiply_data"):
@@ -77,8 +76,9 @@ class BinLogRegPipeline():
 		data_sample = rsi(data_sample, "close", self.rsi_period)
 		data_sample = candle_information(data_sample)
 		data_sample = previous_ret(data_sample, "close", 1)
-		data_sample = alpha_01(data_sample)
-		data_sample = alpha_02(data_sample)
+		data_sample = dist_vwap(data_sample)
+		data_sample = change(data_sample)
+
 
 		data_sample = atr(data_sample,self.atr_period)
 		new_columns = []

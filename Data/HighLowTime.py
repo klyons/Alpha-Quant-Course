@@ -19,6 +19,9 @@ class TimeframeAnalyzer:
         :return: self._data with three new columns: Low_time (TimeStamp), High_time (TimeStamp), High_first (Boolean)
         """
         df = df.copy()
+        if df_lower_timeframe.empty:
+            print(f"Empty dataframe for symbol {df.columns.name}")
+            return
         try:
             df = df.loc[df_lower_timeframe.index[0]:]
         except IndexError as e:
@@ -88,7 +91,6 @@ class TimeframeAnalyzer:
         parent_path, child_path = self.get_paths(cwd, timespan, sub_timeframe_map)
 
         for file in glob.glob(os.path.join(parent_path, "*.parquet")):
-            pdb.set_trace()
             data = os.path.basename(file)
             instrument, timeframe = data.split('_')[0], data.split('_')[1].split('.')[0]
             sub_time = sub_timeframe_map.get(timeframe, "")
