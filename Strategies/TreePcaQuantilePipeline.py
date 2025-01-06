@@ -191,6 +191,7 @@ class TreePcaQuantilePipeline():
         #original code
         #predict_array = self.model.predict(X_pca)
         predict_array = self.model.predict(X)
+        pdb.set_trace()
         self.data["ml_signal"] = 0
         self.data["ml_signal"] = predict_array
 

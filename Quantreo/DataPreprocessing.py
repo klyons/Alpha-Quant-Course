@@ -872,6 +872,7 @@ def binary_signal(df, n):
 
 	return df_copy
 
+<<<<<<< HEAD
 
 
 
@@ -1832,3 +1833,397 @@ class Alphas101:
         features = features.reorder_levels(order=[1, 0])
         features = features.sort_index()
         return features
+=======
+"""these are all the signals from alphas on machine learning"""
+def rank(df):
+	"""Return the cross-sectional percentile rank
+
+		Args:
+			:param df: tickers in columns, sorted dates in rows.
+
+		Returns:
+			pd.DataFrame: the ranked values
+		"""
+	return df.rank(axis=1, pct=True)
+
+def scale(df):
+	"""
+	Scaling time serie.
+	:param df: a pandas DataFrame.
+	:param k: scaling factor.
+	:return: a pandas DataFrame rescaled df such that sum(abs(df)) = k
+	"""
+	return df.div(df.abs().sum(axis=1), axis=0)
+
+def log(df):
+	return np.log1p(df)
+def sign(df):
+	return np.sign(df)
+def power(df, exp):
+	return df.pow(exp)
+
+def ts_lag(df: pd.DataFrame, t: int = 1) -> pd.DataFrame:
+	"""Return the lagged values t periods ago.
+
+	Args:
+		:param df: tickers in columns, sorted dates in rows.
+		:param t: lag
+
+	Returns:
+		pd.DataFrame: the lagged values
+	"""
+	return df.shift(t)
+
+def ts_delta(df, period=1):
+	"""
+	Wrapper function to estimate difference.
+	:param df: a pandas DataFrame.
+	:param period: the difference grade.
+	:return: a pandas DataFrame with today’s value minus the value 'period' days ago.
+	"""
+	return df.diff(period)
+
+def ts_sum(df: pd.DataFrame, window: int = 10) -> pd.DataFrame:
+	"""Computes the rolling ts_sum for the given window size.
+	Args:
+		df (pd.DataFrame): tickers in columns, dates in rows.
+		window      (int): size of rolling window.
+	Returns:
+		pd.DataFrame: the ts_sum over the last 'window' days.
+	"""
+	return df.rolling(window).sum()
+
+def ts_mean(df, window=10):
+	"""Computes the rolling mean for the given window size.
+	Args:
+		df (pd.DataFrame): tickers in columns, dates in rows.
+		window      (int): size of rolling window.
+
+	Returns:
+		pd.DataFrame: the mean over the last 'window' days.
+	"""
+	return df.rolling(window).mean()
+
+def ts_weighted_mean(df, period=10):
+	"""
+	Linear weighted moving average implementation.
+	:param df: a pandas DataFrame.
+	:param period: the LWMA period
+	:return: a pandas DataFrame with the LWMA.
+	"""
+	return (df.apply(lambda x: WMA(x, timeperiod=period)))
+
+def ts_std(df, window=10):
+	"""
+	Wrapper function to estimate rolling standard deviation.
+	:param df: a pandas DataFrame.
+	:param window: the rolling window.
+	:return: a pandas DataFrame with the time-series min over the past 'window' days.
+	"""
+	return (df.rolling(window).std())
+
+def ts_rank(df, window=10):
+	"""
+	Wrapper function to estimate rolling rank.
+	:param df: a pandas DataFrame.
+	:param window: the rolling window.
+	:return: a pandas DataFrame with the time-series rank over the past window days.
+	"""
+	return (df.rolling(window).apply(lambda x: x.rank().iloc[-1]))
+
+def ts_product(df, window=10):
+	"""
+	Wrapper function to estimate rolling ts_product.
+	:param df: a pandas DataFrame.
+	:param window: the rolling window.
+	:return: a pandas DataFrame with the time-series ts_product over the past 'window' days.
+	"""
+	return (df.rolling(window).apply(np.prod))
+
+def ts_min(df, window=10):
+	"""
+	Wrapper function to estimate rolling min.
+	:param df: a pandas DataFrame.
+	:param window: the rolling window.
+	:return: a pandas DataFrame with the time-series min over the past 'window' days.
+	"""
+	return df.rolling(window).min()
+
+def ts_max(df, window=10):
+	"""
+	Wrapper function to estimate rolling min.
+	:param df: a pandas DataFrame.
+	:param window: the rolling window.
+	:return: a pandas DataFrame with the time-series max over the past 'window' days.
+	"""
+	return df.rolling(window).max()
+
+def ts_argmax(df, window=10):
+	"""
+	Wrapper function to estimate which day ts_max(df, window) occurred on
+	:param df: a pandas DataFrame.
+	:param window: the rolling window.
+	:return: well.. that :)
+	"""
+	return df.rolling(window).apply(np.argmax).add(1)
+
+def ts_argmin(df, window=10):
+	"""
+	Wrapper function to estimate which day ts_min(df, window) occurred on
+	:param df: a pandas DataFrame.
+	:param window: the rolling window.
+	:return: well.. that :)
+	"""
+	return (df.rolling(window).apply(np.argmin).add(1))
+
+def ts_corr(x, y, window=10):
+	"""
+	Wrapper function to estimate rolling correlations.
+	:param x, y: pandas DataFrames.
+	:param window: the rolling window.
+	:return: a pandas DataFrame with the time-series min over the past 'window' days.
+	"""
+	return x.rolling(window).corr(y)
+
+def ts_cov(x, y, window=10):
+	"""
+	Wrapper function to estimate rolling covariance.
+	:param df: a pandas DataFrame.
+	:param window: the rolling window.
+	:return: a pandas DataFrame with the time-series min over the past 'window' days.
+	"""
+	return x.rolling(window).cov(y)
+
+def alpha001(c, r):
+	"""(rank(ts_argmax(power(((returns < 0)
+		? ts_std(returns, 20)
+		: close), 2.), 5)) -0.5)"""
+	c[r < 0] = ts_std(r, 20)
+	return (rank(ts_argmax(power(c, 2), 5)).mul(-.5).stack().swaplevel())
+
+def alpha002(o, c, v):
+	"""(-1 * ts_corr(rank(ts_delta(log(volume), 2)), rank(((close - open) / open)), 6))"""
+	s1 = rank(ts_delta(log(v), 2))
+	s2 = rank((c / o) - 1)
+	alpha = -ts_corr(s1, s2, 6)
+	return alpha.stack('ticker').swaplevel().replace([-np.inf, np.inf], np.nan)
+
+def alpha003(o, v):
+	"""(-1 * ts_corr(rank(open), rank(volume), 10))"""
+
+	return (-ts_corr(rank(o), rank(v), 10).stack('ticker').swaplevel().replace([-np.inf, np.inf], np.nan))
+
+def alpha004(l):
+	"""(-1 * Ts_Rank(rank(low), 9))"""
+	return (-ts_rank(rank(l), 9).stack('ticker').swaplevel())
+
+def alpha005(o, vwap, c):
+	"""(rank((open - ts_mean(vwap, 10))) * (-1 * abs(rank((close - vwap)))))"""
+	return (rank(o.sub(ts_mean(vwap, 10))).mul(rank(c.sub(vwap)).mul(-1).abs())
+			.stack('ticker')
+			.swaplevel())
+	
+def alpha006(df, o, v):
+	o = df['Open']
+	v = df['Volume']
+	"""(-ts_corr(open, volume, 10))"""
+	df['alpha006'] = (-ts_corr(o, v, 10))
+	
+def alpha007(self, df, c, v, adv20):
+	"""(adv20 < volume)
+		? ((-ts_rank(abs(ts_delta(close, 7)), 60)) * sign(ts_delta(close, 7)))
+		: -1
+	"""
+	delta7 = self.ts_delta(c, 7)
+	df['alpha007'] = -self.ts_rank(abs(delta7), 60).mul(self.sign(delta7)).where(adv20<v, -1)
+
+def alpha008(o, r):
+	"""-rank(((ts_sum(open, 5) * ts_sum(returns, 5)) -
+		ts_lag((ts_sum(open, 5) * ts_sum(returns, 5)),10)))
+	"""
+	return (-(rank(((ts_sum(o, 5) * ts_sum(r, 5)) -
+						ts_lag((ts_sum(o, 5) * ts_sum(r, 5)), 10))))
+			.stack('ticker')
+			.swaplevel())
+	
+def alpha009(df, c):
+	"""(0 < ts_min(ts_delta(close, 1), 5)) ? ts_delta(close, 1)
+	: ((ts_max(ts_delta(close, 1), 5) < 0)
+	? ts_delta(close, 1) : (-1 * ts_delta(close, 1)))
+	"""
+	close_diff = ts_delta(c, 1)
+	df['alpha009'] = close_diff.where(ts_min(close_diff, 5) > 0,
+								close_diff.where(ts_max(close_diff, 5) < 0,
+												-close_diff))
+
+def alpha010(self, df, c):
+	"""rank(((0 < ts_min(ts_delta(close, 1), 4))
+		? ts_delta(close, 1)
+		: ((ts_max(ts_delta(close, 1), 4) < 0)
+			? ts_delta(close, 1)
+			: (-1 * ts_delta(close, 1)))))
+	"""
+	close_diff = self.ts_delta(c, 1)
+	alpha = close_diff.where(self.ts_min(close_diff, 4) > 0,
+								close_diff.where(self.ts_min(close_diff, 4) > 0,
+												-close_diff))
+	return (rank(alpha).stack('ticker').swaplevel())
+
+def alpha011(c, vwap, v):
+	"""(rank(ts_max((vwap - close), 3)) +
+		rank(ts_min(vwap - close), 3)) *
+		rank(ts_delta(volume, 3))
+		"""
+	return (rank(ts_max(vwap.sub(c), 3)).add(rank(ts_min(vwap.sub(c), 3))).mul(rank(ts_delta(v, 3))).stack('ticker').swaplevel())
+
+def alpha012(self, df, v, c):
+	"""(sign(ts_delta(volume, 1)) *
+			(-1 * ts_delta(close, 1)))
+		"""
+	df['alpha012'] = (sign(ts_delta(v, 1)).mul(-ts_delta(c, 1)))
+
+def alpha021(df, c, v):
+	"""ts_mean(close, 8) + ts_std(close, 8) < ts_mean(close, 2)
+		? -1
+		: (ts_mean(close,2) < ts_mean(close, 8) - ts_std(close, 8)
+			? 1
+			: (volume / adv20 < 1
+				? -1
+				: 1))
+	"""
+	sma2 = ts_mean(c, 2)
+	sma8 = ts_mean(c, 8)
+	std8 = ts_std(c, 8)
+
+	cond_1 = sma8.add(std8) < sma2
+	cond_2 = sma8.add(std8) > sma2
+	cond_3 = v.div(ts_mean(v, 20)) < 1
+
+	val = np.ones_like(c)
+	df['alpha021'] = pd.DataFrame(np.select(condlist=[cond_1, cond_2, cond_3], choicelist=[-1, 1, -1], default=1))
+
+def alpha023(df, h, c):
+	"""((ts_mean(high, 20) < high)
+			? (-1 * ts_delta(high, 2))
+			: 0
+		"""
+	df['alpha023'] = (ts_delta(h, 2).mul(-1).where(ts_mean(h, 20) < h, 0))
+
+def alpha024(self, df, c):
+	"""((((ts_delta((ts_mean(close, 100)), 100) / ts_lag(close, 100)) <= 0.05)
+		? (-1 * (close - ts_min(close, 100)))
+		: (-1 * ts_delta(close, 3)))
+	"""
+	cond = ts_delta(ts_mean(c, 100), 100) / ts_lag(c, 100) <= 0.05
+
+	return (c.sub(ts_min(c, 100)).mul(-1).where(cond, -ts_delta(c, 3))
+			.stack('ticker')
+			.swaplevel())
+	
+def alpha026(df, h, v):
+	"""(-1 * ts_max(ts_corr(ts_rank(volume, 5), ts_rank(high, 5), 5), 3))"""
+	df['alpha026'] = ts_max(ts_corr(ts_rank(v, 5), ts_rank(h, 5), 5).replace([-np.inf, np.inf], np.nan), 3).mul(-1)
+
+def alpha028(df, h, l, c, v, adv20):
+	"""scale(((ts_corr(adv20, low, 5) + (high + low) / 2) - close))"""
+	df['alpha028'] = scale(ts_corr(adv20, l, 5).replace([-np.inf, np.inf], 0).add(h.add(l).div(2).sub(c)))
+
+def alpha032(df, c, vwap):
+	"""scale(ts_mean(close, 7) - close) +
+		(20 * scale(ts_corr(vwap, ts_lag(close, 5),230)))"""
+	df['alpha032'] = scale(ts_mean(c, 7).sub(c)).add(20 * scale(ts_corr(vwap, ts_lag(c, 5), 230)))
+
+def alpha035(df, h, l, c, v, r):
+	"""((ts_Rank(volume, 32) *
+		(1 - ts_Rank(((close + high) - low), 16))) *
+		(1 -ts_Rank(returns, 32)))
+	"""
+	df['alpha035'] = ts_rank(v, 32).mul(1 - ts_rank(c.add(h).sub(l), 16)).mul(1 - ts_rank(r, 32))
+
+def alpha041(df, h, l, vwap):
+	"""power(high * low, 0.5 - vwap"""
+	df['alpha041'] = power(h.mul(l), 0.5).sub(vwap)
+
+def alpha043(df, c, adv20, v):
+	"""(ts_rank((volume / adv20), 20) * ts_rank((-1 * ts_delta(close, 7)), 8))"""
+
+	df['alpha043'] = ts_rank(v.div(adv20), 20).mul(ts_rank(ts_delta(c, 7).mul(-1), 8))
+
+def alpha044(h, v):
+	"""-ts_corr(high, rank(volume), 5)"""
+	df['alpha044'] = ts_corr(h, rank(v), 5).replace([-np.inf, np.inf], np.nan).mul(-1)
+
+def alpha046(df, c):
+	"""0.25 < ts_lag(ts_delta(close, 10), 10) / 10 - ts_delta(close, 10) / 10
+			? -1
+			: ((ts_lag(ts_delta(close, 10), 10) / 10 - ts_delta(close, 10) / 10 < 0)
+				? 1
+				: -ts_delta(close, 1))
+	"""
+	cond = ts_lag(ts_delta(c, 10), 10).div(10).sub(ts_delta(c, 10).div(10))
+	alpha = pd.DataFrame(-np.ones_like(cond))
+	alpha[cond.isnull()] = np.nan
+	df['alpha046'] = cond.where(cond > 0.25, -alpha.where(cond < 0, -ts_delta(c, 1)))
+
+
+
+def alpha050(df, v, vwap):
+	"""-ts_max(rank(ts_corr(rank(volume), rank(vwap), 5)), 5)"""
+	return (ts_max(rank(ts_corr(rank(v),
+                             rank(vwap), 5)), 5).mul(-1))
+
+def alpha051(df, c):
+	"""ts_delta(ts_lag(close, 10), 10).div(10).sub(ts_delta(close, 10).div(10)) < -0.05 * c
+		? 1
+		: -ts_delta(close, 1)"""
+	cond = (ts_delta(ts_lag(c, 10), 10).div(10)
+			.sub(ts_delta(c, 10).div(10)) >= -0.05 * c)
+	df['alpha051']  = -ts_delta(c, 1).where(cond, 1)
+
+def alpha053(df, h, l, c):
+	"""-1 * ts_delta(1 - (high - close) / (close - low), 9)"""
+	inner = (c.sub(l)).add(1e-6)
+	df['alpha053'] = ts_delta(h.sub(c).mul(-1).add(1).div(c.sub(l).add(1e-6)), 9).mul(-1)
+
+def alpha054(df, o, h, l, c):
+	"""-(low - close) * power(open, 5) / ((low - high) * power(close, 5))"""
+	df['alpha054'] = l.sub(c).mul(o.pow(5)).mul(-1).div(l.sub(h).replace(0, -0.0001).mul(c ** 5))
+
+def alpha057(c, vwap):
+	"""-(close - vwap) / ts_weighted_mean(rank(ts_argmax(close, 30)), 2)"""
+	return (c.sub(vwap.add(1e-5))
+			.div(ts_weighted_mean(rank(ts_argmax(c, 30)))).mul(-1)
+			.stack('ticker')
+			.swaplevel())
+	
+def alpha086(c, v, vwap):
+	"""((ts_rank(ts_corr(close, ts_sum(adv20, 14.7444), 6.00049), 20.4195) <
+		rank(((open + close) - (vwap + open)))) * -1)
+	"""
+	df['alpha086']  = ts_rank(ts_corr(c, ts_mean(ts_mean(v, 20), 15), 6), 20).lt(rank(c.sub(vwap))).mul(-1)
+
+def alpha092(df, o, h, l, c, v):
+	"""min(ts_rank(ts_weighted_mean(((((high + low) / 2) + close) < (low + open)), 14.7221),18.8683),
+			ts_rank(ts_weighted_mean(ts_corr(rank(low), rank(adv30), 7.58555), 6.94024),6.80584))
+	"""
+	p1 = ts_rank(ts_weighted_mean(h.add(l).div(2).add(c).lt(l.add(o)), 15), 18)
+	p2 = ts_rank(ts_weighted_mean(ts_corr(rank(l), rank(ts_mean(v, 30)), 7), 6), 6)
+
+	df['alpha092'] =  p1.where(p1<p2, p2)
+
+def alpha096(c, v, vwap):
+	"""(max(ts_rank(ts_weighted_mean(ts_corr(rank(vwap), rank(volume), 5.83878),4.16783), 8.38151),
+		ts_rank(ts_weighted_mean(ts_argmax(ts_corr(ts_rank(close, 7.45404), ts_rank(adv60, 4.13242), 3.65459), 12.6556), 14.0365), 13.4143)) * -1)"""
+
+	s1 = ts_rank(ts_weighted_mean(ts_corr(rank(vwap), rank(v), 10), 4), 8)
+	s2 = ts_rank(ts_weighted_mean(ts_argmax(ts_corr(ts_rank(c, 7),
+													ts_rank(ts_mean(v, 60), 10), 10), 12), 14), 13)
+	return (s1.where(s1 > s2, s2)
+			.mul(-1)
+			.stack('ticker')
+			.swaplevel())
+
+def alpha101(df, o, h, l, c):
+	"""((close - open) / ((high - low) + .001))"""
+	df['alpha101'] = c.sub(o).div(h.sub(l).add(1e-3))
+>>>>>>> 18f6d1c88200e8df50250015b574acb54304b578

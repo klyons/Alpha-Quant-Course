@@ -18,36 +18,45 @@ from Data.HighLowTime import TimeframeAnalyzer
 import warnings
 warnings.filterwarnings("ignore")
 
-# added default parameters
-def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000):
-    save = False
-    name = f"TreePcaQuantile_{symbol}_{multiplier}{timespan}"
-    
+
+def get_data(symbol='SPY', timespan='M', multiplier=10, instrument='Equities'):
     cwd = os.getcwd()
     relative_path = f"quantreo/Data/{instrument}/{multiplier}{timespan}/{symbol}_{multiplier}{timespan}.parquet"
     file_path = os.path.join(cwd, relative_path)
     file_path = os.path.normpath(file_path)
-    #instantiate data classes
+    
+    # Instantiate data classes
     DataObj = DataHandler()
     TimeCorrection = TimeframeAnalyzer()
+    
     if os.path.exists(file_path):
         df = pd.read_parquet(file_path)
-        df = df.head(500000)
+        # df = df.head(200000)
         if 'high_time' not in df.columns or 'low_time' not in df.columns:
             TimeCorrection.high_low_equities(f'{multiplier}{timespan}')
             df = TimeCorrection.get_data()
-            df.to_parquet(file_path)
-            #print("Columns 'high_time' or 'low_time' are present in the dataframe.")
-    else:       
-        if instrument=='Equities':            
-            DataObj.get_equity(symbol = symbol, multiplier=multiplier, timespan=timespan)
+            if df is not None:
+                df.to_parquet(file_path)
+            # print("Columns 'high_time' or 'low_time' are present in the dataframe.")
+    else:
+        if instrument == 'Equities':
+            DataObj.get_equity(symbol=symbol, multiplier=multiplier, timespan=timespan)
             TimeCorrection.high_low_equities(f'{multiplier}{timespan}')
             df = TimeCorrection.get_data()
-            df.to_parquet(file_path)
-        if instrument == 'Currencies':
-            DataObj.get_currency(symbol = symbol, timeframe=mt5.TIMEFRAME_M5) # mt5.TIMEFRAME_H1 ect
+            if df is not None:
+                df.to_parquet(file_path)
+        elif instrument == 'Currencies':
+            DataObj.get_currency(symbol=symbol, timeframe=mt5.TIMEFRAME_M5)  # mt5.TIMEFRAME_H1 etc.
             TimeCorrection.high_low_currencies(f'{multiplier}{timespan}')
         df = pd.read_parquet(file_path)
+    return df
+# added default parameters
+def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_params = None,train_length=200_000):
+    save = False
+    name = f"TreePcaQuantile_{symbol}_{multiplier}{timespan}"
+    
+    
+    df = get_data(symbol, timespan, multiplier, instrument)
 
     params_range = {
         "tp": [0.0007 + i*0.0001 for i in range(4)],
@@ -96,7 +105,7 @@ if __name__ == "__main__":
     instrument = 'Equities'
     # use 'M' for minute 'H' for hour and 'S' for second
     timespan = 'M'
-    multiplier = 3
+    multiplier = 5
     # symbol='SPY', timespan='minute', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000
     run(symbol=symbol, instrument=instrument, timespan=timespan, multiplier=multiplier )
 
