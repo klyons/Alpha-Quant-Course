@@ -21,7 +21,7 @@ class TimeframeAnalyzer:
         df = df.copy()
         if df_lower_timeframe.empty:
             print(f"Empty dataframe for symbol {df.columns.name}")
-            return
+            return df
         try:
             df = df.loc[df_lower_timeframe.index[0]:]
         except IndexError as e:
@@ -107,7 +107,8 @@ class TimeframeAnalyzer:
                         high_tf = pd.read_parquet(file)
                         sub_tf = pd.read_parquet(sub_file)
                         df = self.find_timestamp_extremum(high_tf, sub_tf)
-                        df.to_parquet(file)
+                        if not df.empty:
+                            df.to_parquet(file)
 
     def high_low_currencies(self, timespan):
         sub_timeframe_map = {
