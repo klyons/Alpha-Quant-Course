@@ -94,6 +94,7 @@ class BinLogRegPipeline():
 			self.list_X = self.list_X + new_columns
 			self.columns_added = True  # Set the flag to True after adding
 		# If there are still NaN values, replace with 0
+		data_sample.replace([np.inf, -np.inf], np.nan, inplace=True)
 		data_sample = data_sample.fillna(0)
 		return data_sample
 
@@ -117,6 +118,7 @@ class BinLogRegPipeline():
 		X_train, X_test, y_train, y_test = data_split(self.data_train, split, self.list_X, list_y)
 		#upsample the negative class
 		smote = SMOTE()
+		X_train = X_train.replace([np.inf, -np.inf], 0)
 		X_train, y_train = smote.fit_resample(X_train, y_train)
 		#change cross validation to work with time series
 		tscv = TimeSeriesSplit(n_splits=2)
@@ -124,7 +126,7 @@ class BinLogRegPipeline():
 		# Create the model
 		pipe = Pipeline([
 			('scaler', StandardScaler()),
-			('logistic', LogisticRegression(solver='saga', tol=1e-2, max_iter=100, random_state=42))
+			('logistic', LogisticRegression(solver='saga', tol=1e-2, max_iter=40))
 		])
 
 		grid = {

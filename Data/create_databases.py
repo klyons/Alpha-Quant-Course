@@ -163,7 +163,6 @@ class DataHandler:
                     mdf = pd.concat([mdf, df], axis=0)
                     break
         save_path = self.get_equities_save_path(symbol, multiplier, timespan)
-        pdb.set_trace()
         mdf.to_parquet(save_path)
 
     def get_currency(self, currency=None, timeframe=None):
