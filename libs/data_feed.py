@@ -1,9 +1,9 @@
 import pdb, sys, os
 # Get the directory two levels up from the current script's directory
-two_up = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+execution_dir = os.path.abspath(os.getcwd())
 
 # Add that directory to the system path
-sys.path.append(two_up)
+sys.path.append(execution_dir)
 from trading import quotes2
 
 class DataFeed():
