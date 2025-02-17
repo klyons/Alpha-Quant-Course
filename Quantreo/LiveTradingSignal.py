@@ -1,8 +1,27 @@
 import numpy as np
-from Quantreo.DataPreprocessing import *
-from Quantreo.MetaTrader5 import *
-
+from datetime import datetime, timedelta
+import sys, os, pdb
 from joblib import load
+import warnings
+
+current_working_directory = os.getcwd()
+# Construct the path to the quantreo folder
+quantreo_path = os.path.join(current_working_directory, 'quantreo')
+# Add the quantreo folder to the Python path
+sys.path.append(quantreo_path)
+# Add the quantreo folder to the Python path
+
+print(sys.path)
+import time
+from Quantreo.qmt5 import *
+from Quantreo.DataPreprocessing import *
+from Strategies import BinLogRegPipeline
+
+
+libs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "libs"))
+sys.path.append(libs_path)
+from libs import data_feed
+
 
 
 def random(symbol):
@@ -177,3 +196,36 @@ def li_2023_02_TreePcaQuantile(symbol, timeframe, sma_fast_period, slow_sma_peri
     buy = True if prediction == 1 else False
     sell = True if prediction == -1 else False
     return buy, sell
+
+#timeframe is measured in minutes and up-sampled to the timeframe we want
+def BinLogRegLive(symbol, timeframe, sma_fast_period, slow_sma_period, rsi_period, atr_period, model_path):
+    data = data_feed.DataFeed()
+    pdb.set_trace()
+    df = data.get_quote(symbol, lookback_days=10)
+    df = data.get_time_bars(df, '60T')  # 60 minutes timeframe put the timeframe you want here
+    #df = get_rates(symbol=symbol, number_of_data=500, timeframe=timeframe)
+
+    df = sma_diff(df, "close", sma_fast_period, slow_sma_period)
+    df = rsi(df, "close", rsi_period)
+    df = atr(df, atr_period)
+    df = candle_information(df)
+    df = previous_ret(df, "close", 1)
+    df = dist_vwap(df)
+    df = change(df)
+
+    df = df.dropna()
+    model = load(model_path)
+
+    list_X = ['SMA_diff', 'RSI', 'ATR','candle_way', 'filling', 'amplitude', 'previous_ret', 'change', 'dist_vwap']
+    X = df[list_X]
+
+    predict_array = model.predict(X)
+    prediction = predict_array[-1]
+
+    buy = True if prediction == 1 else False
+    sell = True if prediction == -1 else False
+    return buy, sell
+
+
+if __name__ == "__main__":
+    BinLogRegLive("SPY", '60T', 30, 60, 14, 5, "../models/saved/BinLogreg_IWM_model.jolib")
