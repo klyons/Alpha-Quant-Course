@@ -54,7 +54,7 @@ def get_data(symbol='SPY', timespan='M', multiplier=30, instrument='Equities'):
 
 
 def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000):
-    save = False
+    save = True
     name = f"BinLogReg_{symbol}_{multiplier}{timespan}"
     
     #filter times so only inlcude open market hours
@@ -101,11 +101,18 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         print("No best parameters found.")
         return
 
+    relative_path = f"../copernicus/quantreo/models/saved/{name}_model.joblib"
+    absolute_path = os.path.abspath(relative_path)
+    print(absolute_path)
+    os.makedirs(os.path.dirname(absolute_path), exist_ok=True)
+    
     model = params["model"]
     if save:
-        dump(model, f"../models/saved/{name}_model.jolib")
+        print("saving model")
+        dump(model, absolute_path)
 
     # Show the results
+    print("RESULTS")
     WFO.display()
 
 if __name__ == "__main__":

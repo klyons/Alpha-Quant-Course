@@ -36,8 +36,7 @@ symbol = "IWM"
 lot = 0.01
 magic = 16
 timeframe = timeframes_mapping["4-hours"]
-pct_tp, pct_sl = 0.0064, 0.0047 # DONT PUT THE MINUS SYMBOL ON THE SL
-mt5.initialize()
+pct_tp, pct_sl = 0.001, 0.0007 # DONT PUT THE MINUS SYMBOL ON THE SL
 
 def get_hash(input_string=None):
     if not input_string:
@@ -51,20 +50,9 @@ def get_hash(input_string=None):
     sha256_hash.update(input_string.encode('utf-8'))
     return sha256_hash
 
-current_account_info = mt5.account_info()
-print("------------------------------------------------------------------")
-print(f"Login: {mt5.account_info().login} \tserver: {mt5.account_info().server}")
-print(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-print(
-    f"Balance: {current_account_info.balance} USD, \t Equity: {current_account_info.equity} USD, \t Profit: {current_account_info.profit} USD")
-print("------------------------------------------------------------------")
-
-timeframe_condition = get_verification_time(timeframe[1])
 
 while True:
     #change the time condition to be the correct time in Pacific time
-    if datetime.now().strftime("%H:%M:%S") in timeframe_condition:
-        print(datetime.now().strftime("%H:%M:%S"))
 
         # ! YOU NEED TO HAVE THE SYMBOL IN THE MARKET WATCH TO OPEN OR CLOSE A POSITION
         #selected = mt5.symbol_select(symbol)
@@ -75,20 +63,15 @@ while True:
         #the inputs into the model are the time periods for the indicatores used... rsi, moving averages ect.
         #buy, sell = li_2023_02_LogRegQuantile(symbol, timeframe[0], 30, 80, 14, 5, 
         #                                 "../models/saved/BinLogreg_IWM_model.jolib")
-<<<<<<< HEAD
-        #timeframe is going to be a string converting minutes to whatever we need it to be.
-        timeframe = '60T'   
-        buy, sell = BinLogRegLive(symbol, timeframe=timeframe, 30, 80, 14, 5, "../models/saved/BinLogreg_IWM_model.jolib")
-=======
         import pdb
         pdb.set_trace()
         exchange = LiveTrading()
         df = exchange.get_quote(symbol, lookback_days=10)
         df = exchange.get_time_bars(df, '60T')
-        timeframe = df    
-        buy, sell = BinLogRegLive(symbol, timeframe[0], 30, 80, 14, 5, 
-                                              "../models/saved/BinLogreg_IWM_model.jolib")
->>>>>>> b886867f70e0c94a73ed6a0babfb8e22c6e41c59
+        timeframe = df
+        relative_path = f"../copernicus/quantreo/models/saved/BinLogReg_ARKK_1H_model.joblib"
+        absolute_path = os.path.abspath(relative_path)    
+        buy, sell = BinLogRegLive(symbol, timeframe[0], 20, 60, 14, 5, absolute_path)
 
         # Import current open positions
         res = resume()
@@ -128,11 +111,11 @@ while True:
         order = LiveOrder()
         order.symbol = symbol
         order.instruction = str() # BUY or SELL
-        order.price = 0
+        order.price = 0 # the current market price
         order.bar_size = 0
-        order.stop_loss = 0 # in actual price
-        order.profit_tgt = 0
-        order.quantity = 0
+        order.stop_loss = 0 # price + (pct_sl * price or price) - (pct_sl * price) for shorts
+        order.profit_tgt = 0 # price + (pct_tp * price or price) - (pct_sl * price) for shorts
+        order.quantity = 0  # 1 share for now
         order.hash = get_hash()
         order.strategy_name = "Quantreo"
         if sell:
