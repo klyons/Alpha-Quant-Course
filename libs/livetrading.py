@@ -52,7 +52,7 @@ class LiveTrading():
 		status, pos = self.positions.get_open_position(self.qt.broker, symbol, self.account_hash)
 		return status, pos
 
-	def get_quote(self, symbol, lookback_days=10):
+	def get_quote(self, symbol, lookback_days=15):
 		df = self.qt.get_broker_quote(symbol, lookback_days=lookback_days, pacific_time=True, regular_trading_time=True)
 		if df.empty:
 			print("Unable to get data for %s"%symbol)
@@ -105,7 +105,7 @@ class LiveTrading():
 
 if __name__ == '__main__':
 	data = DataFeed()
-	df = data.get_quote('spy', lookback_days=10)
+	df = data.get_quote('spy', lookback_days=20)
 	rdf = data.get_time_bars(df, '60T')
 	print(rdf)
 	pos = data.get_open_position('FSK')

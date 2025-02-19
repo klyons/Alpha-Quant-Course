@@ -61,7 +61,7 @@ while True:
         #                                 "../models/saved/BinLogreg_IWM_model.jolib")
         pdb.set_trace()
         exchange = livetrading.LiveTrading()
-        df = exchange.get_quote(symbol, lookback_days=12)
+        df = exchange.get_quote(symbol, lookback_days=20)
         df = exchange.get_time_bars(df, '60T')
         pdb.set_trace()
         relative_path = f"../copernicus/quantreo/models/saved/BinLogReg_ARKK_1H_model.joblib"
