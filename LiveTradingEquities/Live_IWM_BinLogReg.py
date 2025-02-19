@@ -61,15 +61,14 @@ while True:
         #                                 "../models/saved/BinLogreg_IWM_model.jolib")
         pdb.set_trace()
         exchange = livetrading.LiveTrading()
-        df = exchange.get_quote(symbol, lookback_days=10)
+        df = exchange.get_quote(symbol, lookback_days=12)
         df = exchange.get_time_bars(df, '60T')
-        timeframe = df
+        pdb.set_trace()
         relative_path = f"../copernicus/quantreo/models/saved/BinLogReg_ARKK_1H_model.joblib"
         absolute_path = os.path.abspath(relative_path)    
-        buy, sell = BinLogRegLive(symbol, timeframe[0], 20, 60, 14, 5, absolute_path)
+        buy, sell = BinLogRegLive(symbol, df, 20, 60, 14, 5, absolute_path)
 
         # Import current open positions
-        res = resume()
         '''
         # Here we have a tp-sl exit signal, and we can't open two position on the same asset for the same strategy
         if ("symbol" in res.columns) and ("volume" in res.columns):

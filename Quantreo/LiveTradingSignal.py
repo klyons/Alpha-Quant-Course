@@ -198,11 +198,11 @@ def li_2023_02_TreePcaQuantile(symbol, timeframe, sma_fast_period, slow_sma_peri
     return buy, sell
 
 #timeframe is measured in minutes and up-sampled to the timeframe we want
-def BinLogRegLive(symbol, timeframe, sma_fast_period, slow_sma_period, rsi_period, atr_period, model_path):
-    data = livetrading.DataFeed()
-    pdb.set_trace()
-    df = data.get_quote(symbol, lookback_days=10)
-    df = data.get_time_bars(df, '60T')  # 60 minutes timeframe put the timeframe you want here
+def BinLogRegLive(symbol, df, sma_fast_period, slow_sma_period, rsi_period, atr_period, model_path):
+    #data = livetrading.DataFeed()
+    
+    #df = data.get_quote(symbol, lookback_days=10)
+    #df = data.get_time_bars(df, '60T')  # 60 minutes timeframe put the timeframe you want here
     #df = get_rates(symbol=symbol, number_of_data=500, timeframe=timeframe)
 
     df = sma_diff(df, "close", sma_fast_period, slow_sma_period)
@@ -210,15 +210,16 @@ def BinLogRegLive(symbol, timeframe, sma_fast_period, slow_sma_period, rsi_perio
     df = atr(df, atr_period)
     df = candle_information(df)
     df = previous_ret(df, "close", 1)
-    df = dist_vwap(df)
     df = change(df)
+    df = dist_vwap(df)
+    
 
     df = df.dropna()
     model = load(model_path)
 
     list_X = ['SMA_diff', 'RSI', 'ATR','candle_way', 'filling', 'amplitude', 'previous_ret', 'change', 'dist_vwap']
     X = df[list_X]
-
+    pdb.set_trace()
     predict_array = model.predict(X)
     prediction = predict_array[-1]
 

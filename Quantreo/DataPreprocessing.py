@@ -38,30 +38,32 @@ def breakout(df, n = 10, decay_factor=0.9):
     return df_copy
 
 def dist_vwap(df, decay_days=2):
-	"""
+    """
     Calculate the alpha for stocks above and below their VWAP.
     """
-	df_copy = df.copy()
-	# Calculate relative days since max close
-	rel_days_since_max = df_copy['close'].rolling(window=30).apply(np.argmax, raw=True)
-	rel_days_since_max_rank = rel_days_since_max.rank()
-	df_copy['vwap'] = df_copy['open'].add(df_copy['high']).add(df_copy['low']).add(df_copy['close']).div(4)
+    df_copy = df.copy()
+    # Calculate relative days since max close
+    rel_days_since_max = df_copy['close'].rolling(window=30).apply(lambda x: np.argmax(x), raw=True)
+    rel_days_since_max_rank = rel_days_since_max.rank()
+
+    # Correct calculation of the 'avg' column (VWAP)
+    df_copy['avg'] = (df_copy['open'] + df_copy['high'] + df_copy['low'] + df_copy['close']) / 4
     # Calculate decline percentage
-	decline_pct = (df_copy['vwap'] - df_copy['close']) / df_copy['close']
+    decline_pct = (df_copy['avg'] - df_copy['close']) / df_copy['close']
 
 	# Calculate exponential decay
-	decay = rel_days_since_max_rank.ewm(span=decay_days).mean()
+    decay = rel_days_since_max_rank.ewm(span=decay_days).mean()
 
     # Calculate alpha for stocks above VWAP
-	alpha_above = decline_pct / np.minimum(decay, 0.20)
+    alpha_above = decline_pct / np.minimum(decay, 0.20)
 
     # Calculate alpha for stocks below VWAP
-	alpha_below = -decline_pct / np.minimum(decay, 0.20)
+    alpha_below = -decline_pct / np.minimum(decay, 0.20)
 
     # Combine the two alphas
-	alpha = np.where(df['close'] > df['vwap'], alpha_above, alpha_below)
-	df_copy['dist_vwap'] = pd.Series(alpha, index=df.index)
-	return df_copy
+    alpha = np.where(df_copy['close'] > df_copy['avg'], alpha_above, alpha_below)
+    df_copy['dist_vwap'] = pd.Series(alpha, index=df.index)
+    return df_copy
 
 def change(df, periods=5):
     df_copy = df.copy()
