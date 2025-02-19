@@ -1,4 +1,5 @@
 import pdb, sys, os
+from datetime import datetime
 # Get the directory two levels up from the current script's directory
 execution_dir = os.path.abspath(os.getcwd())
 
@@ -7,8 +8,10 @@ sys.path.append(execution_dir)
 from trading import quotes2
 from trading import positions
 from trading import tradingqueue as tq
+from trading import bot
 
 class LiveOrder():
+	def __init__(self):
 		self.symbol = str()
 		self.instruction = str() # BUY or SELL
 		self.price = 0
@@ -32,10 +35,10 @@ class LiveTrading():
 		self.que = tq.TradingQueue(self.log, callback=None)
 		self.host_name = 'localhost'
 		self.queue_name = 'equities'
-		self.que.connect(host=host_name)
-		self.que.create_queue(queue_name)
+		self.que.connect(host=self.host_name)
+		self.que.create_queue(self.queue_name)
 
-	def init_log():
+	def init_log(self):
 		al = bot.AppLog()
 		if not os.path.isdir("logs"):
 			os.mkdir("logs")	
@@ -88,7 +91,7 @@ class LiveTrading():
 	def send_order(self, order):
 		instruction = order.instruction
 		symbol = order.symbol
-		price = order.price`
+		price = order.price
 		stop_loss = order.stop_loss
 		profit_target = order.profit_tgt
 		oco_order = {'order_type': 'LIMIT', 'instruction': instruction, 'symbol': symbol, 'price': price,

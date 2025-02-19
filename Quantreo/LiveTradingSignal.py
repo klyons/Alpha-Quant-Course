@@ -20,7 +20,7 @@ from Strategies import BinLogRegPipeline
 
 libs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "libs"))
 sys.path.append(libs_path)
-from libs import data_feed
+from libs import livetrading
 
 
 
@@ -199,7 +199,7 @@ def li_2023_02_TreePcaQuantile(symbol, timeframe, sma_fast_period, slow_sma_peri
 
 #timeframe is measured in minutes and up-sampled to the timeframe we want
 def BinLogRegLive(symbol, timeframe, sma_fast_period, slow_sma_period, rsi_period, atr_period, model_path):
-    data = data_feed.DataFeed()
+    data = livetrading.DataFeed()
     pdb.set_trace()
     df = data.get_quote(symbol, lookback_days=10)
     df = data.get_time_bars(df, '60T')  # 60 minutes timeframe put the timeframe you want here

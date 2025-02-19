@@ -1,11 +1,9 @@
-import MetaTrader5 as mt5
 import pandas as pd
 import numpy as np
 import hashlib
 from datetime import datetime
-import sys, os
+import sys, os, pdb
 
-import py4j
 current_working_dir = os.path.abspath(os.getcwd())
 
 quantreo_path = os.path.join(current_working_dir, 'Quantreo')
@@ -27,12 +25,10 @@ libs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "libs"
 sys.path.append(libs_path)
 from libs import livetrading
 
-
-
-#quantreo/LiveTrading/Live_IWM_BinLogReg.py
 warnings.filterwarnings("ignore")
 
-symbol = "IWM"
+symbol = "ARKK"
+strategy_name = "Quantreo"
 lot = 0.01
 magic = 16
 timeframe = timeframes_mapping["4-hours"]
@@ -63,9 +59,8 @@ while True:
         #the inputs into the model are the time periods for the indicatores used... rsi, moving averages ect.
         #buy, sell = li_2023_02_LogRegQuantile(symbol, timeframe[0], 30, 80, 14, 5, 
         #                                 "../models/saved/BinLogreg_IWM_model.jolib")
-        import pdb
         pdb.set_trace()
-        exchange = LiveTrading()
+        exchange = livetrading.LiveTrading()
         df = exchange.get_quote(symbol, lookback_days=10)
         df = exchange.get_time_bars(df, '60T')
         timeframe = df
@@ -89,41 +84,43 @@ while True:
             continue
         # Check for open position, if the position is open and model says to do the opposite then close
         # the position and submit order for the new one. 
-        status, pos = exchange.get_open_position(symbol)
+        open_pos, pos = exchange.get_open_position(symbol)
         flat_wait = False
-        if status:
+        if open_pos:
             # position is open and if the signal is to enter another trade, then close this position
             # and submit another order
             if sell and pos.long_quantity > 0:
-                exchange.exit_long(pos)
+                exchange.exit_position(self, symbol, 'BUY', pos.long_quantity, strategy_name)
                 flat_wait = True
-            else if buy and pos.short_quantity > 0:
-                exchange.exit_short(pos)
+            elif buy and pos.short_quantity > 0:
+                exchange.exit_position(self, symbol, 'SELL', pos.short_quantity, strategy_name)
                 flat_wait = True
         while (flat_wait):
-            status, pos = exchange.get_open_position(symbol)
-            if not status:
+            open_pos, pos = exchange.get_open_position(symbol)
+            if not open_pos:
                 flat_wait = False
                 break
-            print(f"Waiting on {symbol} to be flat")
+            print(f"Waiting on {symbol} position to be flat")
 
         # Send trade to the queue
+        quote = exchange.get_single_quote(symbol) # returns a quotes object
         order = LiveOrder()
         order.symbol = symbol
-        order.instruction = str() # BUY or SELL
-        order.price = 0 # the current market price
-        order.bar_size = 0
-        order.stop_loss = 0 # price + (pct_sl * price or price) - (pct_sl * price) for shorts
-        order.profit_tgt = 0 # price + (pct_tp * price or price) - (pct_sl * price) for shorts
-        order.quantity = 0  # 1 share for now
-        order.hash = get_hash()
-        order.strategy_name = "Quantreo"
         if sell:
             order.instruction = "SELL"
-            exchange.send_order(order)
+            order.price = quote.ask
+            order.profit_tgt = order.price + (pct_sl * price)
+            order.stop_loss = order.price - (pct_sl * price)
         if buy:
             order.instruction = "BUY"
-            exchange.send_order(order)
-        # Generally you run several asset in the same time, so we put sleep to avoid to do again the
+            order.price = quote.bid
+            order.profit_tgt = order.price - (pct_sl * price)
+            order.stop_loss = order.price + (pct_sl * price)
+        order.quantity = 1  # 1 share for now
+        order.hash = get_hash()
+        order.strategy_name = stragegy_name
+
+        exchange.send_order(order)
+        # Generally you run several assetw in the same time, so we put sleep to avoid to do again the
         # same computations several times and therefore increase the slippage for other strategies
         time.sleep(1)
