@@ -32,7 +32,7 @@ strategy_name = "Quantreo"
 lot = 0.01
 magic = 16
 timeframe = timeframes_mapping["4-hours"]
-pct_tp, pct_sl = 0.001, 0.0007 # DONT PUT THE MINUS SYMBOL ON THE SL
+pct_tp, pct_sl = 0.003, 0.0021 # DONT PUT THE MINUS SYMBOL ON THE SL
 
 def get_hash(input_string=None):
     if not input_string:
@@ -41,12 +41,11 @@ def get_hash(input_string=None):
         # Convert the current date and timestamp to a string
         input_string = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
     sha256_hash = hashlib.sha256()
-    
     # Update the hash object with the input string encoded to bytes
     sha256_hash.update(input_string.encode('utf-8'))
-    return sha256_hash
+    return sha256_hash.hexdigest()
 
-
+exchange = livetrading.LiveTrading()
 while True:
     #change the time condition to be the correct time in Pacific time
 
@@ -59,11 +58,10 @@ while True:
         #the inputs into the model are the time periods for the indicatores used... rsi, moving averages ect.
         #buy, sell = li_2023_02_LogRegQuantile(symbol, timeframe[0], 30, 80, 14, 5, 
         #                                 "../models/saved/BinLogreg_IWM_model.jolib")
-        pdb.set_trace()
-        exchange = livetrading.LiveTrading()
-        df = exchange.get_quote(symbol, lookback_days=20)
+
+        df = exchange.get_quote(symbol, lookback_days=30)
         df = exchange.get_time_bars(df, '60T')
-        pdb.set_trace()
+
         relative_path = f"../copernicus/quantreo/models/saved/BinLogReg_ARKK_1H_model.joblib"
         absolute_path = os.path.abspath(relative_path)    
         buy, sell = BinLogRegLive(symbol, df, 20, 60, 14, 5, absolute_path)
@@ -94,6 +92,12 @@ while True:
             elif buy and pos.short_quantity > 0:
                 exchange.exit_position(self, symbol, 'SELL', pos.short_quantity, strategy_name)
                 flat_wait = True
+            if buy and pos.long_quantity > 0:
+                print("Nothing to do, in an active trade")
+                continue # already in active trade
+            if sell and pos.short_quantity > 0:
+                print("Nothing to do, in active trade")
+                continue # already in an active trade
         while (flat_wait):
             open_pos, pos = exchange.get_open_position(symbol)
             if not open_pos:
@@ -102,24 +106,25 @@ while True:
             print(f"Waiting on {symbol} position to be flat")
 
         # Send trade to the queue
+        print("Send new trade")
         quote = exchange.get_single_quote(symbol) # returns a quotes object
-        order = LiveOrder()
+        order = livetrading.LiveOrder()
         order.symbol = symbol
         if sell:
             order.instruction = "SELL"
             order.price = quote.ask
-            order.profit_tgt = order.price + (pct_sl * price)
-            order.stop_loss = order.price - (pct_sl * price)
+            order.profit_tgt = order.price - (pct_sl * order.price)
+            order.stop_loss = order.price + (pct_sl * order.price)
         if buy:
             order.instruction = "BUY"
             order.price = quote.bid
-            order.profit_tgt = order.price - (pct_sl * price)
-            order.stop_loss = order.price + (pct_sl * price)
+            order.profit_tgt = order.price + (pct_sl * order.price)
+            order.stop_loss = order.price - (pct_sl * order.price)
         order.quantity = 1  # 1 share for now
         order.hash = get_hash()
-        order.strategy_name = stragegy_name
-
+        order.strategy_name = strategy_name
+        pdb.set_trace()
         exchange.send_order(order)
         # Generally you run several assetw in the same time, so we put sleep to avoid to do again the
         # same computations several times and therefore increase the slippage for other strategies
-        time.sleep(1)
+        time.sleep(5)

@@ -213,13 +213,12 @@ def BinLogRegLive(symbol, df, sma_fast_period, slow_sma_period, rsi_period, atr_
     df = change(df)
     df = dist_vwap(df)
     
-
     df = df.dropna()
     model = load(model_path)
 
     list_X = ['SMA_diff', 'RSI', 'ATR','candle_way', 'filling', 'amplitude', 'previous_ret', 'change', 'dist_vwap']
     X = df[list_X]
-    pdb.set_trace()
+
     predict_array = model.predict(X)
     prediction = predict_array[-1]
 

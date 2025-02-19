@@ -9,6 +9,7 @@ from trading import quotes2
 from trading import positions
 from trading import tradingqueue as tq
 from trading import bot
+import json
 
 class LiveOrder():
 	def __init__(self):
@@ -99,8 +100,9 @@ class LiveTrading():
 		 'order_hash': order.hash, 'strategy_name': order.strategy_name}
 		json_message = json.dumps(oco_order)
 		# send the message and exit
-		self.que.send_msg(queue_name, json_message)
+		self.que.send_msg(self.queue_name, json_message)
 		self.log.info(oco_order)
+		print(oco_order)
 		return True
 
 if __name__ == '__main__':
