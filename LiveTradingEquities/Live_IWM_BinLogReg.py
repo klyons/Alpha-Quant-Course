@@ -45,7 +45,7 @@ def get_hash(input_string=None):
     sha256_hash.update(input_string.encode('utf-8'))
     return sha256_hash.hexdigest()
 
-
+exchange = livetrading.LiveTrading()
 while True:
     #change the time condition to be the correct time in Pacific time
 
@@ -58,7 +58,7 @@ while True:
         #the inputs into the model are the time periods for the indicatores used... rsi, moving averages ect.
         #buy, sell = li_2023_02_LogRegQuantile(symbol, timeframe[0], 30, 80, 14, 5, 
         #                                 "../models/saved/BinLogreg_IWM_model.jolib")
-        exchange = livetrading.LiveTrading()
+
         df = exchange.get_quote(symbol, lookback_days=30)
         df = exchange.get_time_bars(df, '60T')
 
@@ -92,6 +92,12 @@ while True:
             elif buy and pos.short_quantity > 0:
                 exchange.exit_position(self, symbol, 'SELL', pos.short_quantity, strategy_name)
                 flat_wait = True
+            if buy and pos.long_quantity > 0:
+                print("Nothing to do, in an active trade")
+                continue # already in active trade
+            if sell and pos.short_quantity > 0:
+                print("Nothing to do, in active trade")
+                continue # already in an active trade
         while (flat_wait):
             open_pos, pos = exchange.get_open_position(symbol)
             if not open_pos:
@@ -100,6 +106,7 @@ while True:
             print(f"Waiting on {symbol} position to be flat")
 
         # Send trade to the queue
+        print("Send new trade")
         quote = exchange.get_single_quote(symbol) # returns a quotes object
         order = livetrading.LiveOrder()
         order.symbol = symbol

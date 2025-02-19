@@ -102,6 +102,7 @@ class LiveTrading():
 		# send the message and exit
 		self.que.send_msg(self.queue_name, json_message)
 		self.log.info(oco_order)
+		print(oco_order)
 		return True
 
 if __name__ == '__main__':
