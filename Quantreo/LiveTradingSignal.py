@@ -2,27 +2,20 @@ import numpy as np
 from datetime import datetime, timedelta
 import sys, os, pdb
 from joblib import load
-import warnings
+import warnings, time
 
 current_working_directory = os.getcwd()
 # Construct the path to the quantreo folder
 quantreo_path = os.path.join(current_working_directory, 'quantreo')
 # Add the quantreo folder to the Python path
 sys.path.append(quantreo_path)
-# Add the quantreo folder to the Python path
-
-print(sys.path)
-import time
 from Quantreo.qmt5 import *
 from Quantreo.DataPreprocessing import *
 from Strategies import BinLogRegPipeline
 
-
 libs_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "libs"))
 sys.path.append(libs_path)
 from libs import livetrading
-
-
 
 def random(symbol):
     values = [True, False]
