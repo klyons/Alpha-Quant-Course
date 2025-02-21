@@ -123,8 +123,10 @@ while True:
         order.quantity = 1  # 1 share for now
         order.hash = get_hash()
         order.strategy_name = strategy_name
-        pdb.set_trace()
-        exchange.send_order(order)
-        # Generally you run several assetw in the same time, so we put sleep to avoid to do again the
-        # same computations several times and therefore increase the slippage for other strategies
+        open_pos, pos = exchange.get_open_position(symbol)
+        working_order = exchange.get_working_order(symbol)
+        if open_pos or working_order:
+            print(f"Position/working order for {order.symbol} is already open, refusing to submit this order")
+        else:
+            exchange.send_order(order)
         time.sleep(5)
