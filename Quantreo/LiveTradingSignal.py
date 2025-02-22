@@ -223,7 +223,7 @@ def BinLogRegLive(symbol, df, sma_fast_period, slow_sma_period, rsi_period, atr_
     prediction = predict_array[-1]
 
     buy = True if prediction == 1 else False
-    sell = True if prediction == -1 else False
+    sell = True if prediction == 0 else False
     return buy, sell
 
 
