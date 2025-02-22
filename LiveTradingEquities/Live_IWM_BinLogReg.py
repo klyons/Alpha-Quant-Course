@@ -3,6 +3,7 @@ import numpy as np
 import hashlib
 from datetime import datetime
 import sys, os, pdb
+import datetime as dt
 
 current_working_dir = os.path.abspath(os.getcwd())
 
@@ -34,6 +35,19 @@ magic = 16
 timeframe = timeframes_mapping["4-hours"]
 pct_tp, pct_sl = 0.003, 0.0021 # DONT PUT THE MINUS SYMBOL ON THE SL
 
+def within_trading_time():
+    # Get the current time
+    now = dt.datetime.now()
+    current_time = now.time()
+    # Define the start and end times
+    start_time = dt.time(6, 30)
+    end_time = dt.time(13, 1)
+
+    # Check if the current time is within the range
+    if start_time <= current_time <= end_time:
+        return True
+    return False
+
 def get_hash(input_string=None):
     if not input_string:
         # Get the current date and timestamp
@@ -58,7 +72,11 @@ while True:
         #the inputs into the model are the time periods for the indicatores used... rsi, moving averages ect.
         #buy, sell = li_2023_02_LogRegQuantile(symbol, timeframe[0], 30, 80, 14, 5, 
         #                                 "../models/saved/BinLogreg_IWM_model.jolib")
-
+        if not within_trading_time():
+            print(f'\r"Outside of trading time....sleeping"', end='\r')
+            time.sleep(10)
+            continue
+        print("\n")
         df = exchange.get_quote(symbol, lookback_days=30)
         df = exchange.get_time_bars(df, '60T')
 
@@ -123,8 +141,10 @@ while True:
         order.quantity = 1  # 1 share for now
         order.hash = get_hash()
         order.strategy_name = strategy_name
-        pdb.set_trace()
-        exchange.send_order(order)
-        # Generally you run several assetw in the same time, so we put sleep to avoid to do again the
-        # same computations several times and therefore increase the slippage for other strategies
+        open_pos, pos = exchange.get_open_position(symbol)
+        working_order = exchange.get_working_order(symbol)
+        if open_pos or working_order:
+            print(f"Position/working order for {order.symbol} is already open, refusing to submit this order")
+        else:
+            exchange.send_order(order)
         time.sleep(5)

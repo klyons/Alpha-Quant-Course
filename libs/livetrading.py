@@ -49,6 +49,9 @@ class LiveTrading():
 		log.info("Start of quantreo_trading log: %s"%formatted_now)
 		return log
 
+	def get_working_order(self, symbol):
+		return self.qt.trades_obj.is_working_order(self.qt.broker, self.account_hash, symbol)
+
 	def get_open_position(self, symbol):
 		status, pos = self.positions.get_open_position(self.qt.broker, symbol, self.account_hash)
 		return status, pos
@@ -100,8 +103,10 @@ class LiveTrading():
 		 'order_hash': order.hash, 'strategy_name': order.strategy_name}
 		json_message = json.dumps(oco_order)
 		# send the message and exit
+		self.que.connect(host=self.host_name)
 		self.que.send_msg(self.queue_name, json_message)
 		self.log.info(oco_order)
+		self.que.disconnect()
 		print(oco_order)
 		return True
 
