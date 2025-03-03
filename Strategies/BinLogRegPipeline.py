@@ -37,6 +37,7 @@ class BinLogRegPipeline():
 		self.sma_fast, self.sma_slow = parameters["sma_fast"], parameters["sma_slow"]
 		self.rsi_period, self.atr_period = parameters["rsi"], parameters["atr"]
 		self.look_ahead_period = parameters["look_ahead_period"]
+		self.threshold = parameters["threshold"]
 
 		self.lags = parameters["lags"]
 		self.multiply_data = False
@@ -150,6 +151,7 @@ class BinLogRegPipeline():
 
 		X = self.data[self.list_X]
 
+		#probs = self.model.predict_proba(X)[:, 1]
 		predict_array = self.model.predict(X)
 		self.data["ml_signal"] = 0
 		self.data["ml_signal"] = predict_array
