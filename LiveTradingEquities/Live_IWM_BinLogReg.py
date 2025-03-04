@@ -33,7 +33,7 @@ strategy_name = "Quantreo"
 lot = 0.01
 magic = 16
 timeframe = timeframes_mapping["4-hours"]
-pct_tp, pct_sl = 0.003, 0.0021 # DONT PUT THE MINUS SYMBOL ON THE SL
+pct_tp, pct_sl = 0.01, 0.008 # DONT PUT THE MINUS SYMBOL ON THE SL
 
 def within_trading_time():
     # Get the current time
