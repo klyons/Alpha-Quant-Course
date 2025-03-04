@@ -111,10 +111,12 @@ while True:
                 exchange.exit_position(self, symbol, 'SELL', pos.short_quantity, strategy_name)
                 flat_wait = True
             if buy and pos.long_quantity > 0:
-                print("Nothing to do, in an active trade")
+                print(f'\r"Active trade....sleeping"', end='\r')
+                time.sleep(5)
                 continue # already in active trade
             if sell and pos.short_quantity > 0:
-                print("Nothing to do, in active trade")
+                print(f'\r"Active trade....sleeping"', end='\r')
+                time.sleep(5)
                 continue # already in an active trade
         while (flat_wait):
             open_pos, pos = exchange.get_open_position(symbol)
@@ -124,7 +126,7 @@ while True:
             print(f"Waiting on {symbol} position to be flat")
 
         # Send trade to the queue
-        print("Send new trade")
+        print("\n Send new trade")
         quote = exchange.get_single_quote(symbol) # returns a quotes object
         order = livetrading.LiveOrder()
         order.symbol = symbol
@@ -144,7 +146,7 @@ while True:
         open_pos, pos = exchange.get_open_position(symbol)
         working_order = exchange.get_working_order(symbol)
         if open_pos or working_order:
-            print(f"Position/working order for {order.symbol} is already open, refusing to submit this order")
+            print(f"\nPosition/working order for {order.symbol} is already open, refusing to submit this order")
         else:
             exchange.send_order(order)
         time.sleep(5)
