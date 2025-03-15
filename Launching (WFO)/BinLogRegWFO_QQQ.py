@@ -54,7 +54,7 @@ def get_data(symbol='SPY', timespan='M', multiplier=30, instrument='Equities'):
 
 
 def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000):
-    save = False
+    save = True
     name = f"BinLogReg_{symbol}_{multiplier}{timespan}"
     
     #filter times so only inlcude open market hours
@@ -68,6 +68,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     params_range = {
         "tp": [0.0008 + i*0.0001 for i in range(4)],
         "sl": [-0.0008 - i*0.0001 for i in range(4)],
+        "threshold": [0.50 + i*0.01 for i in range(2)],
     }
 
     params_fixed = {
@@ -81,6 +82,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         "list_X": ['SMA_diff', 'RSI', 'ATR','candle_way', 'filling', 'amplitude', 'previous_ret', 'change', 'dist_vwap'],
         "train_mode": True,
         "lags": 0,
+        "threshold": 0.50,
     }
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
     WFO = WalkForwardOptimization(df, BinLogRegPipeline, params_fixed, params_range, length_train_set=1_000, randomness=1.00, anchored=False)
@@ -95,17 +97,25 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         print("No best parameters found.")
         return
 
+    relative_path = f"../copernicus/quantreo/models/saved/{name}_model.joblib"
+    absolute_path = os.path.abspath(relative_path)
+    print(absolute_path)
+    os.makedirs(os.path.dirname(absolute_path), exist_ok=True)
+    
     model = params["model"]
     if save:
-        dump(model, f"../models/saved/{name}_model.jolib")
+        print("saving model")
+        dump(model, absolute_path)
 
     # Show the results
+    print("Results")
+    print("Best Parameters:")
     WFO.display()
 
 if __name__ == "__main__":
     #populate with what you want
     parser = argparse.ArgumentParser(description='Run Walk Forward Optimization')
-    parser.add_argument('--symbol', type=str, default='QQQ', help='Symbol to run the optimization on')
+    parser.add_argument('--symbol', type=str, default='USO', help='Symbol to run the optimization on')
     parser.add_argument('--timespan', type=str, default='H', help='Timespan for the data')
     parser.add_argument('--multiplier', type=int, default=1, help='Multiplier for the timespan')
     parser.add_argument('--instrument', type=str, default='Equities', help='Type of instrument (Equities or Currencies)')
