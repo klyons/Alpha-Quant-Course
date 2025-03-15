@@ -72,7 +72,6 @@ def get_symbol_data(symbol, timespan, multiplier):
     if not df.empty:
         utils.convert_to_datetime(df, 'date_time', ctime=None, frmat=None, details=False, pacific_time=True)
     df.set_index("date_time", drop=True, inplace=True)
-    df = get_high_low_time(df, symbol, multiplier, timespan)
     return df
 
 def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000):
@@ -81,6 +80,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     
     #filter times so only inlcude open market hours
     df = get_symbol_data(symbol, timespan, multiplier)
+    df = get_high_low_time(df, symbol, multiplier, timespan)
     # Dataframe should be in Pacific time zone for the following to work
     if timespan == 'hour':
         df = df.between_time('07:00', '13:00')
