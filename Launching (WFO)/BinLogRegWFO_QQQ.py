@@ -68,7 +68,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     params_range = {
         "tp": [0.0008 + i*0.0001 for i in range(4)],
         "sl": [-0.0008 - i*0.0001 for i in range(4)],
-        "threshold": [0.50 + i*0.01 for i in range(2)],
+        #"threshold": [0.50 + i*0.01 for i in range(2)],
     }
 
     params_fixed = {
