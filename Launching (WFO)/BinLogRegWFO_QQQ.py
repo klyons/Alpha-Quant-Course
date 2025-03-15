@@ -56,6 +56,14 @@ def get_data_old(symbol='SPY', timespan='M', multiplier=30, instrument='Equities
         df = pd.read_parquet(file_path)
     return df
 
+def get_high_low_time(df, symbol, multiplier, timespan):
+    TimeCorrection = TimeframeAnalyzer()    
+    TimeCorrection.high_low_equities(f'{multiplier}{timespan}')
+    df = TimeCorrection.get_data()
+    if not df or df.empty:
+        raise Exception("Error, in retrieving high low time data, TimeCorrection.get_data()")
+    return df
+
 def get_symbol_data(symbol, timespan, multiplier):
     db = databank.DataBank()
     df = db.get_trade_data(symbol, timespan, multiplier, start_date=None, save=True, folder=None, rename=False)
@@ -64,6 +72,7 @@ def get_symbol_data(symbol, timespan, multiplier):
     if not df.empty:
         utils.convert_to_datetime(df, 'date_time', ctime=None, frmat=None, details=False, pacific_time=True)
     df.set_index("date_time", drop=True, inplace=True)
+    df = get_high_low_time(df, symbol, multiplier, timespan)
     return df
 
 def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000):
@@ -97,7 +106,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         "lags": 0,
         "threshold": 0.50,
     }
-    pdb.set_trace()
+
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
     WFO = WalkForwardOptimization(df, BinLogRegPipeline, params_fixed, params_range, length_train_set=1_000, randomness=1.00, anchored=False)
     WFO.run_optimization()
@@ -129,13 +138,8 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
 if __name__ == "__main__":
     #populate with what you want
     parser = argparse.ArgumentParser(description='Run Walk Forward Optimization')
-<<<<<<< HEAD
-    parser.add_argument('--symbol', type=str, default='USO', help='Symbol to run the optimization on')
-    parser.add_argument('--timespan', type=str, default='H', help='Timespan for the data')
-=======
     parser.add_argument('--symbol', type=str, default='QQQ', help='Symbol to run the optimization on')
     parser.add_argument('--timespan', type=str, default='hour', help='Timespan for the data')
->>>>>>> 97906980712de7e79e561d040b37ad1098042c22
     parser.add_argument('--multiplier', type=int, default=1, help='Multiplier for the timespan')
     parser.add_argument('--instrument', type=str, default='Equities', help='Type of instrument (Equities or Currencies)')
     parser.add_argument('--train_length', type=int, default=5_000, help='Length of the training set')
