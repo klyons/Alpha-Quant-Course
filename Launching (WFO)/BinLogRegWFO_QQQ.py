@@ -5,6 +5,7 @@ import MetaTrader5 as mt5
 import numpy as np
 # Get the current working directory
 current_working_directory = os.getcwd()
+sys.path.append(current_working_directory)
 # Construct the path to the quantreo folder
 quantreo_path = os.path.join(current_working_directory, 'quantreo')
 # Add the quantreo folder to the Python path
@@ -20,8 +21,11 @@ import warnings
 import argparse
 warnings.filterwarnings("ignore")
 
+from lib import databank
+from lib import utils
+
 #get data
-def get_data(symbol='SPY', timespan='M', multiplier=30, instrument='Equities'):
+def get_data_old(symbol='SPY', timespan='M', multiplier=30, instrument='Equities'):
     cwd = os.getcwd()
     relative_path = f"quantreo/Data/{instrument}/{multiplier}{timespan}/{symbol}_{multiplier}{timespan}.parquet"
     file_path = os.path.join(cwd, relative_path)
@@ -52,18 +56,27 @@ def get_data(symbol='SPY', timespan='M', multiplier=30, instrument='Equities'):
         df = pd.read_parquet(file_path)
     return df
 
+def get_symbol_data(symbol, timespan, multiplier):
+    db = databank.DataBank()
+    df = db.get_trade_data(symbol, timespan, multiplier, start_date=None, save=True, folder=None, rename=False)
+    df.reset_index(inplace=True, drop=True)
+    # Convert date_time to pacific time zone
+    if not df.empty:
+        utils.convert_to_datetime(df, 'date_time', ctime=None, frmat=None, details=False, pacific_time=True)
+    df.set_index("date_time", drop=True, inplace=True)
+    return df
 
 def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000):
     save = False
     name = f"BinLogReg_{symbol}_{multiplier}{timespan}"
     
     #filter times so only inlcude open market hours
-    df = get_data(symbol, timespan, multiplier, instrument)
-
-    if timespan == 'M' or timespan == 'S':
-        df = df.between_time('09:30', '16:00')
-    if timespan == 'H':
-        df = df.between_time('09:00', '16:00')
+    df = get_symbol_data(symbol, timespan, multiplier)
+    # Dataframe should be in Pacific time zone for the following to work
+    if timespan == 'hour':
+        df = df.between_time('07:00', '13:00')
+    else:
+         df = df.between_time('06:30', '13:00')       
     
     params_range = {
         "tp": [0.0008 + i*0.0001 for i in range(4)],
@@ -82,6 +95,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         "train_mode": True,
         "lags": 0,
     }
+    pdb.set_trace()
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
     WFO = WalkForwardOptimization(df, BinLogRegPipeline, params_fixed, params_range, length_train_set=1_000, randomness=1.00, anchored=False)
     WFO.run_optimization()
@@ -106,7 +120,7 @@ if __name__ == "__main__":
     #populate with what you want
     parser = argparse.ArgumentParser(description='Run Walk Forward Optimization')
     parser.add_argument('--symbol', type=str, default='QQQ', help='Symbol to run the optimization on')
-    parser.add_argument('--timespan', type=str, default='H', help='Timespan for the data')
+    parser.add_argument('--timespan', type=str, default='hour', help='Timespan for the data')
     parser.add_argument('--multiplier', type=int, default=1, help='Multiplier for the timespan')
     parser.add_argument('--instrument', type=str, default='Equities', help='Type of instrument (Equities or Currencies)')
     parser.add_argument('--train_length', type=int, default=5_000, help='Length of the training set')
