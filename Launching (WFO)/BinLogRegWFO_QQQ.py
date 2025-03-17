@@ -56,17 +56,10 @@ def get_data_old(symbol='SPY', timespan='M', multiplier=30, instrument='Equities
         df = pd.read_parquet(file_path)
     return df
 
-def get_high_low_time(df, symbol, multiplier, timespan):
-    TimeCorrection = TimeframeAnalyzer()    
-    TimeCorrection.high_low_equities(f'{multiplier}{timespan}')
-    df = TimeCorrection.get_data()
-    if not df or df.empty:
-        raise Exception("Error, in retrieving high low time data, TimeCorrection.get_data()")
-    return df
-
 def get_symbol_data(symbol, timespan, multiplier):
     db = databank.DataBank()
-    df = db.get_trade_data(symbol, timespan, multiplier, start_date=None, save=True, folder=None, rename=False)
+    folder_path = os.path.normpath(os.path.join("C:", "ws", "copernicus", "quantreo", "Data", "Equities", "1H"))
+    df = db.get_trade_data(symbol, timespan, multiplier, start_date=None, save=True, folder=folder_path, rename=False)
     df.reset_index(inplace=True, drop=True)
     # Convert date_time to pacific time zone
     if not df.empty:
@@ -77,15 +70,18 @@ def get_symbol_data(symbol, timespan, multiplier):
 def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000):
     save = True
     name = f"BinLogReg_{symbol}_{multiplier}{timespan}"
-    
+    pdb.set_trace()
     #filter times so only inlcude open market hours
     df = get_symbol_data(symbol, timespan, multiplier)
-    df = get_high_low_time(df, symbol, multiplier, timespan)
+    if 'high_time' not in df.columns or 'low_time' not in df.columns:
+            tf = TimeframeAnalyzer()
+            df = tf.get_high_low(symbol, timespan, multiplier=multiplier, df=df)
+            #df.to_parquet(file_path)
     # Dataframe should be in Pacific time zone for the following to work
     if timespan == 'hour':
         df = df.between_time('07:00', '13:00')
     else:
-         df = df.between_time('06:30', '13:00')       
+        df = df.between_time('06:30', '13:00')       
     
     params_range = {
         "tp": [0.0008 + i*0.0001 for i in range(4)],
@@ -106,7 +102,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         "lags": 0,
         "threshold": 0.50,
     }
-
+    pdb.set_trace()
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
     WFO = WalkForwardOptimization(df, BinLogRegPipeline, params_fixed, params_range, length_train_set=1_000, randomness=1.00, anchored=False)
     WFO.run_optimization()
