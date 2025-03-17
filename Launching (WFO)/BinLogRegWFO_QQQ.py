@@ -70,7 +70,6 @@ def get_symbol_data(symbol, timespan, multiplier):
 def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000):
     save = True
     name = f"BinLogReg_{symbol}_{multiplier}{timespan}"
-    pdb.set_trace()
     #filter times so only inlcude open market hours
     df = get_symbol_data(symbol, timespan, multiplier)
     if 'high_time' not in df.columns or 'low_time' not in df.columns:
@@ -79,7 +78,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
             #df.to_parquet(file_path)
     # Dataframe should be in Pacific time zone for the following to work
     if timespan == 'hour':
-        df = df.between_time('07:00', '13:00')
+        df = df.between_time('06:00', '13:00')
     else:
         df = df.between_time('06:30', '13:00')       
     
