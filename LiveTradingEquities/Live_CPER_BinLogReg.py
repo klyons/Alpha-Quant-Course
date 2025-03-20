@@ -28,7 +28,7 @@ from libs import livetrading
 
 warnings.filterwarnings("ignore")
 
-symbol = "ARKK"
+symbol = "CPER"
 strategy_name = "Quantreo"
 lot = 0.01
 magic = 16
@@ -83,7 +83,7 @@ while True:
             print(f"Failed to get data for {symbol}")
             time.sleep(10)
             continue
-        relative_path = f"../copernicus/quantreo/models/saved/BinLogReg_ARKK_1H_model.joblib"
+        relative_path = f"../copernicus/quantreo/models/saved/BinLogReg_CPER_1H_model.joblib"
         absolute_path = os.path.abspath(relative_path)    
         buy, sell = BinLogRegLive(symbol, df, 20, 60, 14, 5, absolute_path)
 
