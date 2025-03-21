@@ -1,13 +1,19 @@
 import os
 import glob
 import re, pdb
+import time
+from httpx import get
 import numpy as np
 import pandas as pd
+from torch import mul
 from tqdm import tqdm
 import MetaTrader5 as mt5
 from Data.create_databases import DataHandler
 import pyarrow.parquet as pq
 
+from converter import get_path
+from lib import databank
+from lib import utils
 
 class TimeframeAnalyzer:
     def __init__(self):
@@ -66,6 +72,25 @@ class TimeframeAnalyzer:
         
     def get_data(self):
         return self._data
+    
+    def get_path(self, timespan, multiplier):
+        cwd = os.getcwd()
+        folder_path = os.path.join(cwd, r"quantreo\Data\Equities")
+        path = os.path.join(folder_path, f"{multiplier}{timespan[0]}")
+        return path
+    
+    def get_symbol_data(self, symbol, timespan, multiplier):
+        db = databank.DataBank()
+        folder = self.get_path(timespan, multiplier)
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        df = db.get_trade_data(symbol, timespan, multiplier, start_date=None, save=True, folder=folder, rename=False)
+        df.reset_index(inplace=True, drop=True)
+        # Convert date_time to pacific time zone
+        if not df.empty:
+            utils.convert_to_datetime(df, 'date_time', ctime=None, frmat=None, details=False, pacific_time=True)
+        df.set_index("date_time", drop=True, inplace=True)
+        return df
 
     def get_paths(self, cwd, timespan, sub_timeframe_map):
         folder_path = os.path.join(cwd, r"quantreo\Data\Equities")
@@ -97,7 +122,8 @@ class TimeframeAnalyzer:
             if sub_time:                
                 sub_files = glob.glob(os.path.join(child_path, f"{instrument}_{sub_time}.parquet"))
                 numeric_values = int(re.findall(r'\d+', sub_time)[0])
-                DataHandler().get_equity(instrument, multiplier=numeric_values, timespan=re.sub(r'\d+', '', sub_time))
+
+                get_symbol_data(self, instrument, timespan=re.sub(r'\d+', '', sub_time), multiplier=numeric_values)
                 sub_files = glob.glob(os.path.join(child_path, f"{instrument}_{sub_time}.parquet"))
 
                 if sub_files:
@@ -109,6 +135,28 @@ class TimeframeAnalyzer:
                         df = self.find_timestamp_extremum(high_tf, sub_tf)
                         if not df.empty:
                             df.to_parquet(file)
+                            
+    def get_high_low(self, instrument, timespan, multiplier, df):
+        cwd = os.getcwd()
+        sub_timeframe_map = {
+            "1day": "4hour",
+            "4hour": "1hour",
+            "1hour": "30minute",
+            "30minute": "10minute",
+            "10minute": "1minute",
+            "3minute": "1minute",
+            "1minute": "10second",
+            "30second": "10second",
+        }
+        #parent_path, child_path = self.get_path(cwd, timespan, sub_timeframe_map)
+        # instrument, timeframe = data.split('_')[0], data.split('_')[1].split('.')[0]
+        sub_time = sub_timeframe_map.get(f"{multiplier}{timespan.lower()}", "")
+        if sub_time:                
+            numeric_values = int(re.findall(r'\d+', sub_time)[0])
+            timespan = re.sub(r'\d+', '', sub_time)
+            sub_df = self.get_symbol_data(symbol=instrument, timespan=timespan, multiplier=numeric_values)                                
+            df = self.find_timestamp_extremum(df, sub_df)
+        return df
 
     def high_low_currencies(self, timespan):
         sub_timeframe_map = {
