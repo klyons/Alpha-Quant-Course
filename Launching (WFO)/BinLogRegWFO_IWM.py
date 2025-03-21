@@ -5,6 +5,7 @@ import MetaTrader5 as mt5
 import numpy as np
 # Get the current working directory
 current_working_directory = os.getcwd()
+sys.path.append(current_working_directory)
 # Construct the path to the quantreo folder
 quantreo_path = os.path.join(current_working_directory, 'quantreo')
 # Add the quantreo folder to the Python path
@@ -19,6 +20,9 @@ from Data.HighLowTime import TimeframeAnalyzer
 import warnings
 import argparse
 warnings.filterwarnings("ignore")
+
+from lib import databank
+from lib import utils
 
 #get data
 def get_data(symbol='SPY', timespan='M', multiplier=30, instrument='Equities'):
@@ -91,6 +95,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         "list_X": ['SMA_diff', 'RSI', 'ATR','candle_way', 'filling', 'amplitude', 'previous_ret', 'change', 'dist_vwap'],
         "train_mode": True,
         "lags": 0,
+        "threshold": 0.50,
     }
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
     WFO = WalkForwardOptimization(df, BinLogRegPipeline, params_fixed, params_range, length_train_set=1_000, randomness=1.00, anchored=False)

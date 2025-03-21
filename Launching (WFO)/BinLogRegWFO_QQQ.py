@@ -47,8 +47,6 @@ def get_data_old(symbol='SPY', timespan='M', multiplier=30, instrument='Equities
             DataObj.get_equity(symbol=symbol, multiplier=multiplier, timespan=timespan)
             TimeCorrection.high_low_equities(f'{multiplier}{timespan}')
             df = TimeCorrection.get_data()
-            print(df)
-            pdb.set_trace()
             df.to_parquet(file_path)
         elif instrument == 'Currencies':
             DataObj.get_currency(symbol=symbol, timeframe=mt5.TIMEFRAME_M5)  # mt5.TIMEFRAME_H1 etc.
@@ -101,7 +99,6 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         "lags": 0,
         "threshold": 0.50,
     }
-    pdb.set_trace()
     # You can initialize the class into the variable RO, WFO or the name that you want (I put WFO for Walk forward Opti)
     WFO = WalkForwardOptimization(df, BinLogRegPipeline, params_fixed, params_range, length_train_set=1_000, randomness=1.00, anchored=False)
     WFO.run_optimization()

@@ -20,6 +20,9 @@ import warnings
 import argparse
 warnings.filterwarnings("ignore")
 
+from lib import databank
+from lib import utils
+
 #get data
 def get_data(symbol='SPY', timespan='M', multiplier=10, instrument='Equities'):
     cwd = os.getcwd()
@@ -107,7 +110,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
 if __name__ == "__main__":
     #populate with what you want
     parser = argparse.ArgumentParser(description='Run Walk Forward Optimization')
-    parser.add_argument('--symbol', type=str, default='SPY', help='Symbol to run the optimization on')
+    parser.add_argument('--symbol', type=str, default='USO', help='Symbol to run the optimization on')
     parser.add_argument('--timespan', type=str, default='M', help='Timespan for the data')
     parser.add_argument('--multiplier', type=int, default=30, help='Multiplier for the timespan')
     parser.add_argument('--instrument', type=str, default='Equities', help='Type of instrument (Equities or Currencies)')
