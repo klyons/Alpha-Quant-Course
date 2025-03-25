@@ -64,7 +64,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     #filter times so only inlcude open market hours
     df = get_data(symbol, timespan, multiplier, instrument)
     
-    nyse_open = pd.Timestamp('14:00').time()  # 14:30 UTC
+    nyse_open = pd.Timestamp('15:00').time()  # 14:30 UTC
     if timespan == 'M' or timespan == 'S':
         nyse_open = pd.Timestamp('14:30').time()  # 14:30 UTC
     nyse_close = pd.Timestamp('21:00').time()  # 21:00 UTC
@@ -80,8 +80,8 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     #    df = df.between_time('09:00', '16:00')
     
     params_range = {
-        "tp": [0.0008 + i*0.0001 for i in range(4)],
-        "sl": [-0.0008 - i*0.0001 for i in range(4)],
+        "tp": [0.0009 + i*0.0001 for i in range(4)],
+        "sl": [-0.0009 - i*0.0001 for i in range(4)],
     }
 
     params_fixed = {

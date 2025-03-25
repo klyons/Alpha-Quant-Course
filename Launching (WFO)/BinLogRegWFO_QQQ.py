@@ -130,7 +130,7 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
 if __name__ == "__main__":
     #populate with what you want
     parser = argparse.ArgumentParser(description='Run Walk Forward Optimization')
-    parser.add_argument('--symbol', type=str, default='QQQ', help='Symbol to run the optimization on')
+    parser.add_argument('--symbol', type=str, default='TSLA', help='Symbol to run the optimization on')
     parser.add_argument('--timespan', type=str, default='hour', help='Timespan for the data')
     parser.add_argument('--multiplier', type=int, default=1, help='Multiplier for the timespan')
     parser.add_argument('--instrument', type=str, default='Equities', help='Type of instrument (Equities or Currencies)')

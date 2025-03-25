@@ -63,32 +63,27 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
     
     #filter times so only inlcude open market hours
     df = get_data(symbol, timespan, multiplier, instrument)
-    
-    nyse_open = pd.Timestamp('14:00').time()  # 14:30 UTC
+
     if timespan == 'M' or timespan == 'S':
-        nyse_open = pd.Timestamp('14:30').time()  # 14:30 UTC
-    nyse_close = pd.Timestamp('21:00').time()  # 21:00 UTC
-
-    # Ensure the index is in datetime format
-    df.index = pd.to_datetime(df.index)
-
-    # Filter data for NYSE open hours
-    filtered_df = df.between_time(nyse_open, nyse_close)
+        df = df.between_time('09:30', '16:00')
+    if timespan == 'H':
+        df = df.between_time('09:00', '16:00')
     
     params_range = {
-        "tp": [0.0007 + i*0.0001 for i in range(4)],
-        "sl": [-0.0007 - i*0.0001 for i in range(4)],
+        "tp": [0.0008 + i*0.0001 for i in range(4)],
+        "sl": [-0.0008 - i*0.0001 for i in range(4)],
+        #"threshold": [0.50 + i*0.01 for i in range(2)],
     }
 
     params_fixed = {
         "look_ahead_period": 5,
-        "sma_fast": 20,
-        "sma_slow":60,
-        "rsi":14,
+        "sma_fast": 25,
+        "sma_slow":75,
+        "rsi":21,
         "atr":5,
         "cost": 0.00002,
         "leverage": 5,
-        "list_X": ["SMA_diff", "RSI", "ATR","candle_way", "filling", "amplitude", "previous_ret", 'change', 'dist_vwap'],
+        "list_X": ['SMA_diff', 'RSI', 'ATR','candle_way', 'filling', 'amplitude', 'previous_ret', 'change', 'dist_vwap'],
         "train_mode": True,
         "lags": 0,
         "threshold": 0.50,
@@ -117,13 +112,14 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         dump(model, absolute_path)
 
     # Show the results
-    print("RESULTS")
+    print("Results")
+    print("Best Parameters:")
     WFO.display()
 
 if __name__ == "__main__":
     #populate with what you want
     parser = argparse.ArgumentParser(description='Run Walk Forward Optimization')
-    parser.add_argument('--symbol', type=str, default='USO', help='Symbol to run the optimization on')
+    parser.add_argument('--symbol', type=str, default='CPER', help='Symbol to run the optimization on')
     parser.add_argument('--timespan', type=str, default='H', help='Timespan for the data')
     parser.add_argument('--multiplier', type=int, default=1, help='Multiplier for the timespan')
     parser.add_argument('--instrument', type=str, default='Equities', help='Type of instrument (Equities or Currencies)')
@@ -138,7 +134,7 @@ if __name__ == "__main__":
     train_length = args.train_length
 
     run(symbol=symbol, instrument=instrument, timespan=timespan, multiplier=multiplier, train_length=train_length)
-    #symbol = 'SPY'
+    #symbol = 'IWM'
     #instrument = 'Equities'
     # use 'M' for minute 'H' for hour and 'S' for second
     #timespan = 'H'

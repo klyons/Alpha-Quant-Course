@@ -25,7 +25,7 @@ from lib import databank
 from lib import utils
 
 #get data
-def get_data(symbol='SPY', timespan='M', multiplier=30, instrument='Equities'):
+def get_data_old(symbol='SPY', timespan='M', multiplier=30, instrument='Equities'):
     cwd = os.getcwd()
     relative_path = f"quantreo/Data/{instrument}/{multiplier}{timespan}/{symbol}_{multiplier}{timespan}.parquet"
     file_path = os.path.join(cwd, relative_path)
@@ -47,8 +47,6 @@ def get_data(symbol='SPY', timespan='M', multiplier=30, instrument='Equities'):
             DataObj.get_equity(symbol=symbol, multiplier=multiplier, timespan=timespan)
             TimeCorrection.high_low_equities(f'{multiplier}{timespan}')
             df = TimeCorrection.get_data()
-            print(df)
-            pdb.set_trace()
             df.to_parquet(file_path)
         elif instrument == 'Currencies':
             DataObj.get_currency(symbol=symbol, timeframe=mt5.TIMEFRAME_M5)  # mt5.TIMEFRAME_H1 etc.
@@ -56,39 +54,47 @@ def get_data(symbol='SPY', timespan='M', multiplier=30, instrument='Equities'):
         df = pd.read_parquet(file_path)
     return df
 
+def get_symbol_data(symbol, timespan, multiplier):
+    db = databank.DataBank()
+    folder_path = os.path.normpath(os.path.join("C:", "ws", "copernicus", "quantreo", "Data", "Equities", "1H"))
+    df = db.get_trade_data(symbol, timespan, multiplier, start_date=None, save=True, folder=folder_path, rename=False)
+    df.reset_index(inplace=True, drop=True)
+    # Convert date_time to pacific time zone
+    if not df.empty:
+        utils.convert_to_datetime(df, 'date_time', ctime=None, frmat=None, details=False, pacific_time=True)
+    df.set_index("date_time", drop=True, inplace=True)
+    return df
 
 def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_params = None,train_length=10_000):
     save = True
     name = f"BinLogReg_{symbol}_{multiplier}{timespan}"
-    
     #filter times so only inlcude open market hours
-    df = get_data(symbol, timespan, multiplier, instrument)
-    
-    nyse_open = pd.Timestamp('14:00').time()  # 14:30 UTC
-    if timespan == 'M' or timespan == 'S':
-        nyse_open = pd.Timestamp('14:30').time()  # 14:30 UTC
-    nyse_close = pd.Timestamp('21:00').time()  # 21:00 UTC
-
-    # Ensure the index is in datetime format
-    df.index = pd.to_datetime(df.index)
-
-    # Filter data for NYSE open hours
-    filtered_df = df.between_time(nyse_open, nyse_close)
+    df = get_symbol_data(symbol, timespan, multiplier)
+    if 'high_time' not in df.columns or 'low_time' not in df.columns:
+            tf = TimeframeAnalyzer()
+            df = tf.get_high_low(symbol, timespan, multiplier=multiplier, df=df)
+            #df.to_parquet(file_path)
+    # Dataframe should be in Pacific time zone for the following to work
+    if timespan == 'hour':
+        df = df.between_time('06:00', '13:00')
+    else:
+        df = df.between_time('06:30', '13:00')       
     
     params_range = {
-        "tp": [0.0007 + i*0.0001 for i in range(4)],
-        "sl": [-0.0007 - i*0.0001 for i in range(4)],
+        "tp": [0.0008 + i*0.0001 for i in range(4)],
+        "sl": [-0.0008 - i*0.0001 for i in range(4)],
+        #"threshold": [0.50 + i*0.01 for i in range(2)],
     }
 
     params_fixed = {
         "look_ahead_period": 5,
-        "sma_fast": 20,
-        "sma_slow":60,
-        "rsi":14,
+        "sma_fast": 25,
+        "sma_slow":75,
+        "rsi":21,
         "atr":5,
         "cost": 0.00002,
         "leverage": 5,
-        "list_X": ["SMA_diff", "RSI", "ATR","candle_way", "filling", "amplitude", "previous_ret", 'change', 'dist_vwap'],
+        "list_X": ['SMA_diff', 'RSI', 'ATR','candle_way', 'filling', 'amplitude', 'previous_ret', 'change', 'dist_vwap'],
         "train_mode": True,
         "lags": 0,
         "threshold": 0.50,
@@ -117,14 +123,15 @@ def run(symbol='SPY', timespan='M', multiplier=10, instrument='Equities', opt_pa
         dump(model, absolute_path)
 
     # Show the results
-    print("RESULTS")
+    print("Results")
+    print("Best Parameters:")
     WFO.display()
 
 if __name__ == "__main__":
     #populate with what you want
     parser = argparse.ArgumentParser(description='Run Walk Forward Optimization')
     parser.add_argument('--symbol', type=str, default='USO', help='Symbol to run the optimization on')
-    parser.add_argument('--timespan', type=str, default='H', help='Timespan for the data')
+    parser.add_argument('--timespan', type=str, default='hour', help='Timespan for the data')
     parser.add_argument('--multiplier', type=int, default=1, help='Multiplier for the timespan')
     parser.add_argument('--instrument', type=str, default='Equities', help='Type of instrument (Equities or Currencies)')
     parser.add_argument('--train_length', type=int, default=5_000, help='Length of the training set')
@@ -138,7 +145,7 @@ if __name__ == "__main__":
     train_length = args.train_length
 
     run(symbol=symbol, instrument=instrument, timespan=timespan, multiplier=multiplier, train_length=train_length)
-    #symbol = 'SPY'
+    #symbol = 'IWM'
     #instrument = 'Equities'
     # use 'M' for minute 'H' for hour and 'S' for second
     #timespan = 'H'
