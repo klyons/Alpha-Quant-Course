@@ -213,12 +213,39 @@ def BinLogRegLive(symbol, df, sma_fast_period, slow_sma_period, rsi_period, atr_
     X = df[list_X]
 
     predict_array = model.predict(X)
-    prediction = predict_array[-2]
+    prediction = predict_array[-1]
 
     buy = True if prediction == 1 else False
     sell = True if prediction == 0 else False
     return buy, sell
 
+def BinLogRegLiveHour(symbol, df, sma_fast_period, slow_sma_period, rsi_period, atr_period, model_path):
+    #data = livetrading.DataFeed()
+    
+    #df = data.get_quote(symbol, lookback_days=10)
+    #df = data.get_time_bars(df, '60T')  # 60 minutes timeframe put the timeframe you want here
+    #df = get_rates(symbol=symbol, number_of_data=500, timeframe=timeframe)
+
+    df = sma_diff(df, "close", sma_fast_period, slow_sma_period)
+    df = rsi(df, "close", rsi_period)
+    df = atr(df, atr_period)
+    df = candle_information(df)
+    df = previous_ret(df, "close", 1)
+    df = change(df)
+    df = dist_vwap(df)
+    
+    df = df.dropna()
+    model = load(model_path)
+
+    list_X = ['SMA_diff', 'RSI', 'ATR','candle_way', 'filling', 'amplitude', 'previous_ret', 'change', 'dist_vwap']
+    X = df[list_X]
+
+    predict_array = model.predict(X)
+    prediction = predict_array[-2]
+
+    buy = True if prediction == 1 else False
+    sell = True if prediction == 0 else False
+    return buy, sell
 
 if __name__ == "__main__":
     BinLogRegLive("SPY", '60T', 30, 60, 14, 5, "../models/saved/BinLogreg_IWM_model.jolib")
